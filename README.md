@@ -115,6 +115,19 @@ The build needs an Android NDK r27c, the ARM64 LLVM toolchain and the Python whe
 `packaging/android-apk/build_toolchain.py`. The alpha13 APK was produced with
 `versionCode 32` and the debug signing key.
 
+## CI build
+
+This fork builds the APK on GitHub Actions. Open **Actions → Android app → Run workflow**; a
+`workflow_dispatch` run uploads `nx2android-android-apk` (the APK) and `nx2a-game-profiles`.
+Run [`45254511512`](https://github.com/GJR787878/nx2android-it-takes-two2/actions/runs/45254511512)
+succeeded in 7m26s and produced a 259,504,559-byte APK, SHA-256
+`587f4d1d693a86fc53bfd48ac157c0579c8a10bada54db2da0991ca588a66396`.
+
+It is signed with the same debug certificate as alpha13, so it installs over alpha13. The
+keystore is kept in repository secrets (`NX2A_KEYSTORE_B64` plus password/alias/key secrets),
+not in Git. The workflow builds the APK only; it does not run the unit tests, which are not
+green on this snapshot.
+
 ## Credits and rights
 
 The port is based on [nx2androidX](https://github.com/GJR787878/nx2androidX) and its upstream
