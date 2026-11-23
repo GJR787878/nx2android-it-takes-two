@@ -16,6 +16,7 @@ deliberately absent. Read this before saying that a path is “missing” or tha
 | `porter/` | The port pipeline (Python): extraction, shader split, data-pack assembly, revisions |
 | `nxnative/dm/` | The native host: Vulkan backend, Android services, input, overlay, texture/present code |
 | `nxnative/dm/games/010092A0172E4000/` | This port's `game.tsv` + `android.tsv` profile |
+| `nxnative/dm/games/{game.py,profile_guess.py,settings.py,settings.tsv}` | Upstream profile scripts the app ships; they were absent from the first slim snapshot and are restored |
 | `nxnative/dm/games/README.md` | Upstream's profile format documentation |
 | `packaging/android-apk/` | `build_apk.sh`, asset staging, NDK/LLVM fetching, APK assembly |
 | `docs/` | Porting/architecture/development docs; the original upstream README is kept as `docs/README-upstream.md` |
@@ -27,11 +28,14 @@ deliberately absent. Read this before saying that a path is “missing” or tha
 
 ### 1. The other game profiles (the large table set)
 
-`nxnative/dm/games` here has only:
+`nxnative/dm/games` here has:
 
 - `010092A0172E4000/game.tsv`
 - `010092A0172E4000/android.tsv`
+- the four upstream scripts (`game.py`, `profile_guess.py`, `settings.py`, `settings.tsv`)
 - the upstream `README.md`
+
+It does not have the other 184 profile folders.
 
 The upstream profiles are about **572 MB** of shader tables. Committing them would make this
 snapshot a second copy of the profile warehouse and make the repository unnecessarily large.
@@ -108,15 +112,16 @@ The GitHub workflow is `.github/workflows/android-apk.yml`:
 - it needs `NX2A_KEYSTORE_B64` (and the matching password/alias secrets) to sign with the
   project key. Without it, Gradle uses the runner's throwaway debug key.
 
-**CI is not green in this snapshot.** The known source-level test blockers are in
-`CHANGES.md`; the missing inputs (profiles, docs images) are above. This is a documentation
-snapshot, not a promise that a clean `git clone` will pass `python -m unittest discover tests`.
+The API/dispatch build succeeds: run `45254511512` produced the APK in 7m26s. The **test
+suite** is still not green in this snapshot; the known source-level blockers are in
+`CHANGES.md`, and the missing test inputs (profiles, docs images) are above. The build workflow
+does not run the tests, so a green APK is not a green test suite.
 
 ## Reading rules for an AI tool
 
 - `android/` + `porter/` + `nxnative/` + `packaging/` are the code; `docs/` is documentation.
-- `nxnative/dm/games/010092A0172E4000` is the only profile that belongs to this port; other
-  profile folders are intentionally absent from Git.
+- `nxnative/dm/games` has the four profile scripts, the README and the IT2 profile folder;
+  other profile folders are intentionally absent from Git.
 - The profile package is an input to the app, not something the APK embeds.
 - The sRGB fallback is in the code but is not active in alpha13; see `AI_CONTEXT.md`.
 - A red test or a missing `docs/images/logo-badge.svg` does not mean the native port is
