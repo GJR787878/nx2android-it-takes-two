@@ -66,6 +66,12 @@ All large files are attached to the [alpha13 release](https://github.com/GJR7878
 - [60 fps alpha12 log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha12-log.zip)
 - [60 fps alpha13 log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha13-srgb-log.zip)
 
+The GitHub Actions build of this fork is attached to the [CI build release](https://github.com/GJR787878/nx2android-it-takes-two2/releases/tag/ci-20261124-alpha13):
+
+- [CI-built APK](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13/nx2android-v0.4.1-alpha13-it2-ci.apk), signed with the same key as alpha13
+- [CI profiles package](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13/nx2a-profiles-ci-r1.zip), It Takes Two only
+- [comparison report](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13/CI_BUILD_REPORT.md)
+
 ## Logs and measured behaviour
 
 | Log | Build | Run | Key numbers |
