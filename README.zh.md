@@ -44,7 +44,7 @@ APK 放在 **Releases**，不在 Git 树里，因为它超过 GitHub 单文件 1
 - `android/app/src/main/assets/fpslock/010092A0172E4000.tsv` — 从 FPSLocker 表生成的限帧表，
   60 帧测试使用。
 - `logs/` — alpha11 30 帧、alpha12 60 帧、alpha13 60 帧日志压缩包。
-- `docs/IT2-完整版解锁说明.md` — 完整版解锁说明。
+- `docs/IT2-完整版解锁说明.md`、`docs/IT2-full-unlock-notes.md` — 完整版解锁说明（中文 / 英文）。
 - `docs/apk-sha256-v13.txt`、`docs/profiles-r2-it2.sha256` — 校验值。
 - `AI_CONTEXT.md`、`CHANGES.md`、`SOURCE_MAP.md`、`patches/` — 给 AI/源码阅读的上下文。
 

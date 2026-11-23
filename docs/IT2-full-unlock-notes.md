@@ -1,58 +1,78 @@
-# 《双人成行》安卓移植：完整版解锁说明（alpha11）
+# It Takes Two Android port: full-game unlock notes (alpha11)
 
-## 问题在哪
+**English** | [中文](IT2-完整版解锁说明.md)
 
-游戏不是“资源不全”，也不是存档没解到后期，而是**构建时没有把卡带里的追加内容（AddOnContent）挂进端口**。
+## The problem
 
-- 本体 `010092A0172E4000` 是**共用壳**：完整版和好友通行证共用它。
-- 完整版由追加内容 `010092A0172E5001`（v0）解锁，卡带里实际带有它的 RomFS：
-  - `FullGameEntitlement.uplugin`（395 字节）
-  - `Content/Paks/Switch/FullGameEntitlementNuts-Switch.pak`（5,182 字节）
-- 好友通行证是 `010092A0172E5002`（v0）。
-- 端口没有挂任何 aoc，`nn::aoc::CountAddOnContent` 返回 0，所以游戏按试玩版跑；章节选择虽然读到了存档里的“阁楼”，点进去仍被“保存章节无法于试玩版游玩”挡住。
+The game was not missing assets, and the save was not short of a later chapter. The build had
+simply not mounted the cartridge's AddOnContent into the port.
 
-## alpha11 做了什么
+- The base title `010092A0172E4000` is a **shared shell**: the full game and the Friend's Pass
+  both use it.
+- The full game is unlocked by AddOnContent `010092A0172E5001` (v0), whose RomFS is present on
+  the cartridge:
+  - `FullGameEntitlement.uplugin` (395 bytes)
+  - `Content/Paks/Switch/FullGameEntitlementNuts-Switch.pak` (5,182 bytes)
+- The Friend's Pass is `010092A0172E5002` (v0).
+- The port mounted no AOC, so `nn::aoc::CountAddOnContent` returned 0 and the game ran as the
+  trial. The chapter selector could read “阁楼” from the save, but entering it was blocked by
+  “保存章节无法于试玩版游玩”.
 
-1. 用 `nx_extract --aoc-xci` 直接从 XCI 的 secure 分区按标题 ID 取出 5001 的 RomFS（不依赖单独的 DLC NSP）。
-2. 把这两个文件随 APK 打进 `assets/aoc/010092A0172E4000/1/`。
-3. 启动该作时（`GameActivity.startGame`）：
-   - 若 `<端口目录>/aoc/1/FullGameEntitlement.uplugin` 不存在，就从 APK 资产复制整棵目录；
-   - 向宿主注入 `DM_AOC_DIR=<端口目录>/aoc`。
-4. 宿主随后应报告 `aoc: reporting 1 add-on contents {1}`，并把 index 1 挂成只读 RomFS。
+## What alpha11 does
 
-不改存档、不改 UID，也不影响与官方版共存（包名仍是 `com.gjr.nx2androidx`）。
+1. `nx_extract --aoc-xci` reads the 5001 RomFS directly from the XCI's secure partition by title
+   ID (no separate DLC NSP required).
+2. Both files ship in the APK under `assets/aoc/010092A0172E4000/1/`.
+3. On launch of this title, `GameActivity.startGame`:
+   - copies the whole directory from the APK assets if
+     `<port dir>/aoc/1/FullGameEntitlement.uplugin` does not exist;
+   - injects `DM_AOC_DIR=<port dir>/aoc` into the host.
+4. The host should then log `aoc: reporting 1 add-on contents {1}` and mount index 1 as a
+   read-only RomFS.
 
-## 安装
+No save edit, no UID change, and coexistence with the official app is unaffected (the package
+name remains `com.gjr.nx2androidx`).
 
-直接覆盖安装 alpha11（versionCode 30，签名与 alpha10 相同），不要卸载，存档会保留。
+## Install
 
-## 验证
+Install over alpha11 directly (`versionCode 30`, same signer as alpha10). Do not uninstall; the
+saves stay.
 
-进游戏后打开“继续游戏 → 阁楼·交响乐章”。若还提示试玩版，导出端口目录下的 `log.txt`，先看这两行：
+## Verify
+
+Open “Continue → 阁楼·交响乐章”. If it still says trial, export the port directory's `log.txt`
+and check these two lines first:
 
 ```text
 aoc: reporting 1 add-on contents {1}
 fs mount add-on content ... index 1
 ```
 
-- 有 `reporting 1`、mount 成功：授权已挂上，剩下的是章节/存档条件。
-- 仍是 `reporting 0` 或 mount 失败：把 `log.txt` 发回来，下一版查 `DM_AOC_DIR` 是否被端口 `env.txt` 里的旧行覆盖，或游戏是否走另一条试玩判定。
+- `reporting 1` and a successful mount: the entitlement is mounted; what remains is a
+  chapter/save condition.
+- Still `reporting 0` or a failed mount: send the `log.txt` back. The next build checks whether
+  `DM_AOC_DIR` was overwritten by an old line in the port's `env.txt`, or whether the game uses
+  another trial check.
 
-## 60 帧为什么之前不生效（alpha12）
+## Why 60 fps did not work earlier (alpha12)
 
-勾选“60 帧”是构建期选项。移植器当时把 FPSLocker 表路径写成出包机器的：
+The “60 fps” checkbox is a build-time option. The porter wrote the FPSLocker table path as the
+build machine's:
 
 `/sdcard/Android/data/com.gjr.nx2androidx/files/fpslock.tsv`
 
-但 App 的端口在私有目录 `.../files/ports/ItTakesTwo-data/`，宿主打不开这张表，就不会把游戏的 `t.MaxFPS` 从 30 改成 62。
+But the app's port lives in the private directory `.../files/ports/ItTakesTwo-data/`; the host
+could not open that table, so it did not change the game's `t.MaxFPS` from 30 to 62.
 
-alpha12 在启动时：
+alpha12 does this at launch:
 
-- 把 `DM_FPS_LOCKS`、`DM_AOC_DIR` 改写成端口里的真实路径；
-- 端口没有 `fpslock.tsv` 时，从 APK 资产补一份（build `C4067E8CB3258656`，对应本体 1.0.2）；
-- 写入 `DM_FPS_TARGET=60` 和 `DM_PRESENT_INTERVAL=display`。
+- rewrites `DM_FPS_LOCKS` and `DM_AOC_DIR` to the real paths inside the port;
+- installs a copy of `fpslock.tsv` from the APK assets when the port has none (build
+  `C4067E8CB3258656`, matching base 1.0.2);
+- writes `DM_FPS_TARGET=60` and `DM_PRESENT_INTERVAL=display`.
 
-安装 alpha12 更新包（versionCode 31）覆盖即可，不需要重新移植。日志里应出现：
+Install the alpha12 update (`versionCode 31`) over the existing app; no re-port is needed. The
+log should contain:
 
 ```text
 60 fps: installed fpslock.tsv for main build C4067E8CB3258656 -> ...
@@ -60,4 +80,5 @@ env: DM_FPS_TARGET=60, DM_FPS_LOCKS=..., DM_PRESENT_INTERVAL=display
 main: 2 frame limit write(s) from .../fpslock.tsv (FPSLocker-Warehouse config)
 ```
 
-若 HUD 仍是 30，发 `log.txt`；重点看 `DM_FPS_LOCKS` 是否被打开、`build` 行是否与游戏 `main` 的 build ID 一致。
+If the HUD still shows 30, send `log.txt`; check whether `DM_FPS_LOCKS` was opened and whether
+the `build` row matches the game `main` build ID.

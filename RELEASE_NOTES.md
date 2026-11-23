@@ -1,5 +1,7 @@
 # It Takes Two Android port — alpha13 (verified build)
 
+**English** | [中文](RELEASE_NOTES.zh.md)
+
 This release is the latest verified It Takes Two port build, plus the 30 fps and 60 fps logs,
 the source snapshot and the profile package.
 

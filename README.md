@@ -46,7 +46,8 @@ The APK is in **Releases**, not in the Git tree, because it is over GitHub's 100
 - `android/app/src/main/assets/fpslock/010092A0172E4000.tsv` — the FPSLocker-derived frame-limit
   table used by the 60 fps test.
 - `logs/` — alpha11 30 fps, alpha12 60 fps, alpha13 60 fps log archives.
-- `docs/IT2-完整版解锁说明.md` — the full-game unlock notes.
+- `docs/IT2-完整版解锁说明.md`, `docs/IT2-full-unlock-notes.md` — the full-game unlock notes
+  (Chinese / English).
 - `docs/apk-sha256-v13.txt`, `docs/profiles-r2-it2.sha256` — checksums.
 - `AI_CONTEXT.md`, `CHANGES.md`, `SOURCE_MAP.md`, `patches/` — the AI/source-reading context.
 
