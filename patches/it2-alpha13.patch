@@ -1,0 +1,618 @@
+diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
+index f5d8ee1..93b77f8 100644
+--- a/android/app/build.gradle.kts
++++ b/android/app/build.gradle.kts
+@@ -74,8 +74,8 @@ android {
+         targetSdk = 28
+         // The version the release's tag carries, without the "v": v0.3.0-alpha02 -> 0.3.0-alpha02. The update
+         // check compares the two, so the app can tell which release is newer than the one running.
+-        versionCode = 25
+-        versionName = "0.4.1-alpha06"
++        versionCode = 32
++        versionName = "0.4.1-alpha13"
+         ndk { abiFilters += listOf("arm64-v8a") }
+         // -PnxLsfg=false: the host the app builds is built without the frame generation (the lsfg/ folder): the host
+         // is then smaller and the frame generation reports that it is not in this build. The default is the current
+diff --git a/android/app/src/main/java/com/nx/android/data/playback/PackEnvStore.kt b/android/app/src/main/java/com/nx/android/data/playback/PackEnvStore.kt
+index ffc1514..ca51d4f 100644
+--- a/android/app/src/main/java/com/nx/android/data/playback/PackEnvStore.kt
++++ b/android/app/src/main/java/com/nx/android/data/playback/PackEnvStore.kt
+@@ -69,11 +69,25 @@ internal object PackEnvStore {
+         }.toMutableList()
+         lang?.let { rest.add("DM_LANG=$it") }
+         driver?.let { rest.add("DM_VK_DRIVER=$it") }
++        write(pack, rest)
++    }
++
++    /**
++     * 追加/覆盖宿主下次启动要读的行：移植器按出包那台机器的路径写的 DM_FPS_LOCKS 等，到这台手机上要改成
++     * 包里的真实路径。其余行（语言、驱动、档案自己的设置）原样留在原来的位置。
++     */
++    fun ensureRows(pack: File, rows: Map<String, String>) {
++        val rest = lines(pack).filter { l -> splitRow(l).first.trim() !in rows.keys }.toMutableList()
++        rows.forEach { (k, v) -> rest.add("$k=$v") }
++        write(pack, rest)
++    }
++
++    private fun write(pack: File, lines: List<String>) {
+         val env = File(pack, "env.txt")
+         val tmp = File(pack, "env.txt.new")
+-        tmp.writeText((rest + "").joinToString("\n"), Charsets.UTF_8)   // trailing newline, as the porter wrote it
++        tmp.writeText((lines + "").joinToString("\n"), Charsets.UTF_8)   // trailing newline, as the porter wrote it
+         if (!tmp.renameTo(env)) {
+-            env.writeText((rest + "").joinToString("\n"), Charsets.UTF_8)   // a replace-in-place refusal: write directly
++            env.writeText((lines + "").joinToString("\n"), Charsets.UTF_8)   // a replace-in-place refusal: write directly
+             tmp.delete()
+         }
+     }
+diff --git a/android/app/src/main/java/com/nx/android/domain/PortablePack.kt b/android/app/src/main/java/com/nx/android/domain/PortablePack.kt
+index 3661bab..a34b00c 100644
+--- a/android/app/src/main/java/com/nx/android/domain/PortablePack.kt
++++ b/android/app/src/main/java/com/nx/android/domain/PortablePack.kt
+@@ -67,7 +67,7 @@ object PortablePack {
+      * The paths inside a pack that travel with it: an env row whose value ends with one of these
+      * points into the pack, so it follows the folder wherever the folder is.
+      */
+-    private val PACK_PATHS = listOf("/aoc", "/sysdata", "/standard.ttf", "/nintendo_ext.ttf")
++    private val PACK_PATHS = listOf("/aoc", "/fpslock.tsv", "/sysdata", "/standard.ttf", "/nintendo_ext.ttf")
+ 
+     /** The characters a file system refuses in a name. */
+     private val ILLEGAL = Regex("""[\\/:*?"<>|]""")
+diff --git a/android/app/src/main/java/com/nx/android/game/GameActivity.kt b/android/app/src/main/java/com/nx/android/game/GameActivity.kt
+index 835d703..4814695 100644
+--- a/android/app/src/main/java/com/nx/android/game/GameActivity.kt
++++ b/android/app/src/main/java/com/nx/android/game/GameActivity.kt
+@@ -84,6 +84,7 @@ import com.nx.android.data.drivers.Drivers
+ import com.nx.android.data.hasGyroscope
+ import com.nx.android.data.library.LibraryFileScanner
+ import com.nx.android.data.playback.PackEnvStore
++import com.nx.android.domain.library.GameConfigRepository
+ import com.nx.android.domain.RuntimeBuildMarker
+ import com.nx.android.game.GameActivity.Companion.prepareScope
+ import com.nx.android.game.hud.HudField
+@@ -169,6 +170,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
+ 
+     @Inject lateinit var compiler: RuntimeCompiler
+     @Inject lateinit var runtimeStorage: RuntimeStorage
++    @Inject lateinit var gameConfigs: GameConfigRepository
+ 
+     /** 界面语言：toast 与抽屉里的词从这里取 */
+     private val locale: AppLocale get() = (application as NxApp).locale
+@@ -537,6 +539,71 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
+ 
+     // ---- 开跑：加载宿主 → 游戏进视图树 → Native.start（全部在主线程上，SurfaceView 最后进）----
+ 
++    /**
++     * 追加内容 5001 的 RomFS：完整版授权标记（.uplugin + 5 KB pak）。只给本体是本共用壳的这一作，
++     * 文件已经在就不覆盖（玩家自己放进来的优先）；装不上只记日志，开跑不拦。
++     */
++    private fun ensureFullGameEntitlement(pack: File, titleId: String?) {
++        if (titleId != "010092A0172E4000") return
++        val index = File(pack, "aoc/1")
++        if (File(index, "FullGameEntitlement.uplugin").isFile) return
++        try {
++            copyAssetTree("aoc/010092A0172E4000/1", index)
++            AppLog.line("aoc: installed the full-game entitlement (5001) -> $index")
++        } catch (t: Throwable) {
++            AppLog.line("[RED] aoc: full-game entitlement 5001 was not installed: ${t.message}")
++        }
++    }
++
++    /**
++     * 开跑前把端口里“属于哪台机器”的路径改成本机的：授权目录、FPSLocker 表。
++     * 60 帧只在玩家勾了该作的选项时启用；表不存在时只记一行，绝不把默认 30 帧的档案硬拉到 60。
++     */
++    private fun ensurePackEnvironment(pack: File, titleId: String?) {
++        ensureFullGameEntitlement(pack, titleId)
++        val rows = linkedMapOf<String, String>()
++        val aoc = File(pack, "aoc")
++        if (File(aoc, "1").isDirectory) rows["DM_AOC_DIR"] = aoc.absolutePath
++        val fps60 = titleId != null && gameConfigs.forTitle(titleId).fps60
++        if (fps60) {
++            val locks = File(pack, "fpslock.tsv")
++            if (!locks.isFile && titleId == "010092A0172E4000") {   // this build's table, carried in the APK: no port rebuild needed
++                try {
++                    copyAssetTree("fpslock/010092A0172E4000.tsv", locks)
++                    AppLog.line("60 fps: installed fpslock.tsv for main build C4067E8CB3258656 -> $locks")
++                } catch (t: Throwable) {
++                    AppLog.line("[RED] 60 fps: fpslock.tsv was not installed: ${t.message}")
++                }
++            }
++            if (locks.isFile) {
++                rows["DM_FPS_TARGET"] = "60"
++                rows["DM_FPS_LOCKS"] = locks.absolutePath
++                rows["DM_PRESENT_INTERVAL"] = "display"
++            } else if (titleId == "010092A0172E4000") {
++                AppLog.line("[RED] 60 fps: the pack has no fpslock.tsv; rebuild the port with \"60 帧\" checked (the phone cannot fetch the config at launch)")
++            }
++        }
++        if (rows.isEmpty()) return
++        try {
++            PackEnvStore.ensureRows(pack, rows)
++            AppLog.line("env: " + rows.entries.joinToString(", ") { "${it.key}=${it.value}" })
++        } catch (t: Throwable) {
++            AppLog.line("[RED] env: the launch rows could not be written: ${t.message}")
++        }
++    }
++
++    /** 资产里的整棵目录 → 应用私有目录（叶子是文件；AssetManager 对文件返回空列表）。 */
++    private fun copyAssetTree(assetPath: String, target: File) {
++        val children = assets.list(assetPath) ?: emptyArray()
++        if (children.isEmpty()) {
++            target.parentFile?.mkdirs()
++            assets.open(assetPath).use { input -> target.outputStream().use { input.copyTo(it) } }
++        } else {
++            target.mkdirs()
++            children.forEach { copyAssetTree("$assetPath/$it", File(target, it)) }
++        }
++    }
++
+     private fun startGame(host: String) {
+         preparePhase = PreparePhase.IDLE
+         try {
+@@ -570,9 +637,14 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
+             .ifEmpty { HudField.DEFAULT }
+         hudFahrenheit = prefs.bool(PrefsStore.HUD_TEMP_F, false)
+         // 体感的两行也交给宿主：开不开（默认按设备有没有陀螺仪）与保留甩动方向（每个游戏各一份）
++        // 端口自己的路径：授权目录与 60 fps 的 FPSLocker 表都按包里真实位置改好（移植器写的是出包那台机器的
++        // /sdcard/Android/data/<包>/files，本机的包在私有目录里，宿主按那条路径读不到）。
++        ensurePackEnvironment(File(pack), titleId)
++        val aoc = File(File(pack), "aoc")
++        val aocEnv = if (File(aoc, "1").isDirectory) arrayOf("DM_AOC_DIR=" + aoc.absolutePath) else emptyArray()
+         val env = (fgSettings?.load()?.envLines(LosslessDll.ensure(this)?.absolutePath) ?: emptyArray()) +
+             (motionSettings?.load(hasGyroscope(this))?.envLines() ?: emptyArray()) +
+-            (cheatSettings?.envLine(cheatsDir()) ?: emptyArray())
++            (cheatSettings?.envLine(cheatsDir()) ?: emptyArray()) + aocEnv
+         if (!Native.start(pack, filesDir.path, titleId, resources.displayMetrics.densityDpi, env, this)) {
+             endProcess()   // the save import asked to end: it happens at the next start
+             return
+diff --git a/android/gradle.properties b/android/gradle.properties
+index 27c34b6..44b8345 100644
+--- a/android/gradle.properties
++++ b/android/gradle.properties
+@@ -1,5 +1,5 @@
+-org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
+-org.gradle.parallel=true
++org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
++org.gradle.parallel=false
+ org.gradle.caching=true
+ android.useAndroidX=true
+ kotlin.code.style=official
+diff --git a/nxnative/dm/android/gfx_vk_present.c b/nxnative/dm/android/gfx_vk_present.c
+index 434bb5e..3a7b873 100644
+--- a/nxnative/dm/android/gfx_vk_present.c
++++ b/nxnative/dm/android/gfx_vk_present.c
+@@ -83,6 +83,31 @@ __attribute__((weak)) float dm_overlay_opacity(void) { return 0.6f; }
+ __attribute__((weak)) int dm_overlay_layout(void) { return 0; }
+ __attribute__((weak)) int dm_text_entry(char *title, int tcap, char *text, int xcap, int *sel, int *shift) { (void)title; (void)tcap; (void)text; (void)xcap; (void)sel; (void)shift; return 0; }
+ static void pace_reset(void); static void ov_fb_drop(void);
++static int fmt8(VkFormat f) {
++    return f == VK_FORMAT_R8G8B8A8_UNORM || f == VK_FORMAT_R8G8B8A8_SRGB ||
++           f == VK_FORMAT_B8G8R8A8_UNORM || f == VK_FORMAT_B8G8R8A8_SRGB ||
++           f == VK_FORMAT_A8B8G8R8_UNORM_PACK32 || f == VK_FORMAT_A8B8G8R8_SRGB_PACK32;
++}
++static int fmt_is_srgb(VkFormat f) {
++    return f == VK_FORMAT_R8G8B8A8_SRGB || f == VK_FORMAT_B8G8R8A8_SRGB || f == VK_FORMAT_A8B8G8R8_SRGB_PACK32;
++}
++// 0: the source and target have the same sRGB-ness (a plain copy), 1: UNORM source into an sRGB target (decode before
++// writing), 2: sRGB source into a UNORM target (encode before writing). The shader does the half the blit would do twice.
++static int srgb_mode(VkFormat src, VkFormat dst) {
++    if (!fmt8(src) || !fmt8(dst)) return 0;
++    int s = fmt_is_srgb(src), d = fmt_is_srgb(dst);
++    return s == d ? 0 : d ? 1 : 2;
++}
++// The window image's whole view, for the fallback pipeline. The image is not registered in the texture view cache:
++// img_drop destroys this one itself.
++static VkImageView present_view(vkimg_t *im) {
++    if (im->full) return im->full;
++    VkImageViewCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, NULL, 0, im->img, VK_IMAGE_VIEW_TYPE_2D, im->fmt, {0},
++                                {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
++    VkResult r = vkCreateImageView(V.dev, &ci, NULL, &im->full);
++    if (r) { VKRED_ONCE(113, "present: a view of the %ux%u window image (format %d): %d; the picture is blitted", im->w, im->h, im->fmt, r); return VK_NULL_HANDLE; }
++    return im->full;
++}
+ // Pre-rotation. A landscape window on a panel whose own orientation is portrait (the Retroid Pocket 5: 1080x1920, the window 1920x1080, currentTransform
+ // ROTATE_90) left the turn to Android's compositor, and its display hardware does not rotate such a layer: SurfaceFlinger composited it on the GPU every
+ // frame ("CLIENT", "ROT_90" in its layer table) and showed a new frame only every second vsync, 30 fps on screen whatever the game made. With the surface's
+@@ -92,6 +117,7 @@ static void pace_reset(void); static void ov_fb_drop(void);
+ static VkSurfaceTransformFlagBitsKHR g_pre = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;   // the swapchain's preTransform
+ static VkExtent2D g_next;   // the swapchain images' extent: the window's (g_sext), or the panel's orientation when pre-rotated
+ static struct { VkImage img; VkDeviceMemory mem; VkImageView view; VkDescriptorSetLayout dsl; VkPipelineLayout layout; VkDescriptorPool pool; VkDescriptorSet set;
++                VkDescriptorSet src[8];   // present fallbacks: the game's window image, one set per present slot (the pipeline samples it directly)
+                 VkSampler samp; VkPipeline pipe; VkFormat pfmt; } g_rot;
+ static void rot_drop_image(void) {
+     if (g_rot.view) vkDestroyImageView(V.dev, g_rot.view, NULL);
+@@ -111,19 +137,22 @@ static int rot_setup(void) {
+     if (!g_rot.dsl) {
+         VkDescriptorSetLayoutBinding b = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL};
+         VkDescriptorSetLayoutCreateInfo li = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 1, &b};
+-        VkPushConstantRange pr = {VK_SHADER_STAGE_VERTEX_BIT, 0, 6 * sizeof(float)};
+-        VkDescriptorPoolSize ps = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}; VkDescriptorPoolCreateInfo pi = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, NULL, 0, 1, 1, &ps};
+-        VkSamplerCreateInfo si = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, NULL, 0, VK_FILTER_NEAREST, VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST,
++        VkPushConstantRange pr = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 6 * sizeof(float) + sizeof(int)};
++        VkDescriptorPoolSize ps = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 9}; VkDescriptorPoolCreateInfo pi = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, NULL, 0, 9, 1, &ps};
++        VkSamplerCreateInfo si = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, NULL, 0, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_NEAREST,
+             VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE};
+         VkResult r = vkCreateDescriptorSetLayout(V.dev, &li, NULL, &g_rot.dsl);
+         VkPipelineLayoutCreateInfo pl = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, NULL, 0, 1, &g_rot.dsl, 1, &pr};
+         if (!r) r = vkCreatePipelineLayout(V.dev, &pl, NULL, &g_rot.layout);
+         if (!r) r = vkCreateDescriptorPool(V.dev, &pi, NULL, &g_rot.pool);
+-        VkDescriptorSetAllocateInfo ai = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, NULL, g_rot.pool, 1, &g_rot.dsl};
+-        if (!r) r = vkAllocateDescriptorSets(V.dev, &ai, &g_rot.set);
++        VkDescriptorSet sets[9];
++        VkDescriptorSetAllocateInfo ai = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, NULL, g_rot.pool, 9, &g_rot.dsl};
++        if (!r) r = vkAllocateDescriptorSets(V.dev, &ai, sets);
++        if (!r) { g_rot.set = sets[0]; for (int i = 0; i < 8; i++) g_rot.src[i] = sets[i + 1]; }
+         if (!r) r = vkCreateSampler(V.dev, &si, NULL, &g_rot.samp);
+-        if (r) { VKRED_ONCE(110, "pre-rotation: descriptor set, layout or sampler: %d; the compositor turns the picture", r); return 0; }
++        if (r) { VKRED_ONCE(110, "present/rotation: descriptor set, layout or sampler: %d; the picture is blitted", r); return 0; }
+     }
++    if (!g_rot.dsl || !g_rot.layout || !g_rot.pool || !g_rot.samp) return 0;
+     if (g_rot.pfmt != g_sfmt) {
+         if (g_rot.pipe) { vkDestroyPipeline(V.dev, g_rot.pipe, NULL); g_rot.pipe = VK_NULL_HANDLE; }
+         VkShaderModule vm = VK_NULL_HANDLE, fm = VK_NULL_HANDLE;
+@@ -177,13 +206,16 @@ static int swap_make(void) {
+     uint32_t nf = 0; vkGetPhysicalDeviceSurfaceFormatsKHR(V.pd, g_surf, &nf, NULL); VkSurfaceFormatKHR sf[32]; if (nf > 32) nf = 32; vkGetPhysicalDeviceSurfaceFormatsKHR(V.pd, g_surf, &nf, sf);
+     g_sfmt = sf[0].format; for (uint32_t i = 0; i < nf; i++) if (sf[i].format == VK_FORMAT_R8G8B8A8_UNORM) g_sfmt = sf[i].format;
+     for (uint32_t i = 0; i < nf; i++) if (sf[i].format == g_want) g_sfmt = g_want;   // the window texture's sRGB-ness (g_want), so the blit copies its bytes as they are
+-    if (g_sfmt != g_want) VKRED_ONCE(95, "the surface offers no format %d for the window texture: its picture is %s", g_want, g_want == VK_FORMAT_R8G8B8A8_SRGB ? "darker" : "lighter");
++    if (g_sfmt != g_want) VKLOG("the surface offers no format %d for the window texture: the present shader keeps its sRGB-ness (the old path's picture was %s)", g_want, g_want == VK_FORMAT_R8G8B8A8_SRGB ? "darker" : "lighter");
+     g_sext = (VkExtent2D){(uint32_t)ANativeWindow_getWidth(w), (uint32_t)ANativeWindow_getHeight(w)};   // the window as it is now; Android's compositor rotates (identity transform)
+     if (!g_sext.width || !g_sext.height) g_sext = caps.currentExtent;
+     uint32_t n = caps.minImageCount < 3 ? 3 : caps.minImageCount; if (caps.maxImageCount && n > caps.maxImageCount) n = caps.maxImageCount;
+     int want = 1; { const char *e = getenv("DM_VK_PRETRANSFORM"); if (e && *e) want = atoi(e) != 0; }
+     VkSurfaceTransformFlagBitsKHR turn = (VkSurfaceTransformFlagBitsKHR)(caps.currentTransform & (VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR | VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR));
+-    g_pre = want && turn && (caps.supportedTransforms & turn) && V.has_dynrender && rot_setup() ? turn : VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
++    int need_rot = want && turn && (caps.supportedTransforms & turn) && V.has_dynrender;
++    int need_fix = srgb_mode(g_want, g_sfmt) && V.has_dynrender;   // the surface's format: the shader undoes its one conversion
++    if ((need_rot || need_fix) && !rot_setup()) need_rot = 0;
++    g_pre = need_rot ? turn : VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+     g_next = g_pre == VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR ? g_sext : (VkExtent2D){g_sext.height, g_sext.width};
+     VkSwapchainCreateInfoKHR ci = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, NULL, 0, g_surf, n, g_sfmt, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, g_next, 1,
+         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SHARING_MODE_EXCLUSIVE, 0, NULL, g_pre,
+@@ -937,6 +969,38 @@ static uint64_t pace_desired(double period) {   // the frame's desired present t
+ // present, the picture-rect report for the touch mapping); a generated frame follows what it chose, and never
+ // flips (the chain was fed the texture already upright). period < 0: a redraw (ticket 0).
+ static VkFormat im_meta_srgb;   // the game frame's sRGB pick: a generated frame follows it (present_window sets it)
++// The fallback present: a full-screen triangle samples the window image and writes it into the swapchain. The shader
++// undoes the one colour conversion the surface's format would add (rot.frag's mode), so the bytes the game wrote reach
++// the screen as they are. Only when the surface offers the window texture's sRGB-ness alone; the ordinary path is the
++// blit below. 0: not drawable (the caller falls back to the blit).
++static int present_fix_draw(VkCommandBuffer cb, vkimg_t *im, VkImageView tview, int dx, int dy, int dw, int dh,
++                            int cx, int cy, int cw, int ch, int flip, int mode, uint32_t slot) {
++    if (!im || !g_rot.pipe || !g_rot.samp || !tview || !V.has_dynrender) return 0;
++    VkImageView sv = present_view(im); if (!sv) return 0;
++    VkDescriptorImageInfo ii = {g_rot.samp, sv, VK_IMAGE_LAYOUT_GENERAL};
++    VkWriteDescriptorSet wr = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, NULL, g_rot.src[slot], 0, 0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &ii};
++    vkUpdateDescriptorSets(V.dev, 1, &wr, 0, NULL);
++    VkRenderingAttachmentInfo ca = {0};
++    ca.imageView = tview; ca.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
++    ca.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; ca.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
++    ca.clearValue.color.float32[0] = 0; ca.clearValue.color.float32[1] = 0; ca.clearValue.color.float32[2] = 0; ca.clearValue.color.float32[3] = 1;
++    VkRenderingInfo ri = {0}; ri.renderArea.extent = g_sext; ri.layerCount = 1; ri.colorAttachmentCount = 1; ri.pColorAttachments = &ca;
++    vkCmdBeginRendering(cb, &ri);
++    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_rot.pipe);
++    vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_rot.layout, 0, 1, &g_rot.src[slot], 0, NULL);
++    VkViewport vp = {(float)dx, (float)dy, (float)dw, (float)dh, 0, 1};
++    VkRect2D sc = {{dx, dy}, {(uint32_t)dw, (uint32_t)dh}};
++    vkCmdSetViewport(cb, 0, 1, &vp); vkCmdSetScissor(cb, 0, 1, &sc);
++    // rot.vert: p runs 0..2 over the triangle; uv = (m.xy * p.x + m.zw * p.y) + t. The x axis maps the crop's width,
++    // the y axis its height (and is negated when the window image is stored bottom-up).
++    float m[6] = {(float)cw / im->w * 0.5f, 0, 0, (flip && vk_window_bottom_up() ? -1.0f : 1.0f) * (float)ch / im->h * 0.5f,
++                  (float)cx / im->w, flip && vk_window_bottom_up() ? 1.0f - (float)cy / im->h : (float)cy / im->h};
++    vkCmdPushConstants(cb, g_rot.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof m, m);
++    vkCmdPushConstants(cb, g_rot.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof m, sizeof mode, &mode);
++    vkCmdDraw(cb, 3, 1, 0, 0);
++    vkCmdEndRendering(cb);
++    return 1;
++}
+ static void present_one(vkimg_t *im, VkImage src, int cx, int cy, int cw, int ch, int flip, double period, uint64_t ticket, int with_meta) {
+     // The performance HUD's counters: the game's frame (a redraw presents the last one again — not a frame) and the generation's frames
+     hud_count(with_meta, period, mono_ns());
+@@ -952,16 +1016,26 @@ static void present_one(vkimg_t *im, VkImage src, int cx, int cy, int cw, int ch
+     VkCommandBuffer cb = g_pcb[k];
+     VkCommandBufferBeginInfo bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, NULL, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT}; vkBeginCommandBuffer(cb, &bi);
+     vk_img_barrier_all(cb);   // after everything submitted before on this queue
+-    barrier(cb, tgt, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+-    VkClearColorValue black = {{0, 0, 0, 1}}; VkImageSubresourceRange rg = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+-    vkCmdClearColorImage(cb, tgt, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &black, 1, &rg);
+     double s = fmin((double)g_sext.width / cw, (double)g_sext.height / ch); int dw = (int)(cw * s), dh = (int)(ch * s), dx = ((int)g_sext.width - dw) / 2, dy = ((int)g_sext.height - dh) / 2;
+     if (with_meta) vk_pic_set((float)dx / g_sext.width, (float)dy / g_sext.height, (float)dw / g_sext.width, (float)dh / g_sext.height);
+-    VkImageBlit b = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {{cx, cy, 0}, {cx + cw, cy + ch, 1}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {{dx, dy, 0}, {dx + dw, dy + dh, 1}}};
+-    if (flip && vk_window_bottom_up()) { b.srcOffsets[0].y = cy + ch; b.srcOffsets[1].y = cy; }   // lower-left origin: the window image is stored bottom-up (gfx_vk_exec.c)
+-    if (im && im->layout == VK_IMAGE_LAYOUT_UNDEFINED) { barrier(cb, im->img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); im->layout = VK_IMAGE_LAYOUT_GENERAL; }   // an imported frame buffer, first shown (gl_android.c)
+-    vkCmdBlitImage(cb, src, VK_IMAGE_LAYOUT_GENERAL, tgt, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &b, VK_FILTER_LINEAR);
+-    VkImageLayout lay = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
++    if (im && im->layout != VK_IMAGE_LAYOUT_GENERAL) { barrier(cb, im->img, im->layout, VK_IMAGE_LAYOUT_GENERAL); im->layout = VK_IMAGE_LAYOUT_GENERAL; }   // the fallback sampler reads GENERAL; an imported frame buffer starts UNDEFINED (gl_android.c)
++    int mode = im && src == im->img ? srgb_mode(im->fmt, g_sfmt) : 0;
++    VkImageLayout lay = VK_IMAGE_LAYOUT_UNDEFINED;
++    int fixed = 0;
++    if (mode) {
++        barrier(cb, tgt, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
++        fixed = present_fix_draw(cb, im, tview, dx, dy, dw, dh, cx, cy, cw, ch, flip, mode, k);
++        if (fixed) lay = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
++        else barrier(cb, tgt, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
++    } else barrier(cb, tgt, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
++    if (!fixed) {
++        VkClearColorValue black = {{0, 0, 0, 1}}; VkImageSubresourceRange rg = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
++        vkCmdClearColorImage(cb, tgt, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &black, 1, &rg);
++        VkImageBlit b = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {{cx, cy, 0}, {cx + cw, cy + ch, 1}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {{dx, dy, 0}, {dx + dw, dy + dh, 1}}};
++        if (flip && vk_window_bottom_up()) { b.srcOffsets[0].y = cy + ch; b.srcOffsets[1].y = cy; }   // lower-left origin: the window image is stored bottom-up (gfx_vk_exec.c)
++        vkCmdBlitImage(cb, src, VK_IMAGE_LAYOUT_GENERAL, tgt, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &b, VK_FILTER_LINEAR);
++        lay = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
++    }
+     int external = dm_external_active();
+     int ovm = external ? 0 : dm_overlay_visible(), menu = external ? -1 : dm_menu_state(), fps = dm_overlay_fps();
+     if ((ovm || menu >= 0 || fps) && overlay_ready(cb, k, menu) && (V.has_dynrender || ov_fb(idx))) {   // without dynamic rendering, only with the image's framebuffer
+@@ -994,12 +1068,13 @@ static void present_one(vkimg_t *im, VkImage src, int cx, int cy, int cw, int ch
+         // ROTATE_90 (u, v) -> (v, 1 - u), anticlockwise for ROTATE_270 (u, v) -> (1 - v, u)
+         static const float cw[6] = {0, 1, -1, 0, 0, 1}, ccw[6] = {0, -1, 1, 0, 1, 0};
+         vkCmdPushConstants(cb, g_rot.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof cw, g_pre == VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR ? cw : ccw);
++        int rot_mode = 0; vkCmdPushConstants(cb, g_rot.layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof cw, sizeof rot_mode, &rot_mode);
+         vkCmdDraw(cb, 3, 1, 0, 0);
+         vkCmdEndRendering(cb);
+         barrier(cb, g_simg[idx], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+     } else barrier(cb, g_simg[idx], lay, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+     vkEndCommandBuffer(cb);
+-    VkPipelineStageFlags ws = VK_PIPELINE_STAGE_TRANSFER_BIT;
++    VkPipelineStageFlags ws = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+     VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, NULL, 1, &g_acq[k], &ws, 1, &cb, 1, &g_done_sem[k]};
+     extern pthread_mutex_t g_vk_queue_mu;
+     pthread_mutex_lock(&g_vk_queue_mu);
+diff --git a/nxnative/dm/android/gfx_vk_tex.c b/nxnative/dm/android/gfx_vk_tex.c
+index 551c12f..8e392ba 100644
+--- a/nxnative/dm/android/gfx_vk_tex.c
++++ b/nxnative/dm/android/gfx_vk_tex.c
+@@ -392,7 +392,7 @@ extern uint64_t g_tex_frame;   // presents so far, for the packaged textures' la
+ enum { EVICT_KEEP = 60 };
+ static uint64_t g_img_n, g_img_bytes, g_img_evicted;   // live images and their bytes, images evicted so far (vk_tex_sweep's line)
+ static void img_drop(vkimg_t *im) { if (im->bc_draw) { vkimg_t *d = im->bc_draw; vk_lrz_forget(d); vk_tex_view_drop_all(d); if (d->sub) vk_defer_free_image_sub(d->img, d->sub); else vk_defer_free_image(d->img, d->mem); free(d); }
+-    vk_lrz_forget(im); if (im->lin_mem) nvn_dirty_release(im->lin_mem, im->lin_len); if (im->packaged && !im->pkg_released && im->pkg_mem) nvn_dirty_release(im->pkg_mem, im->pkg_len); g_img_n--; g_img_bytes -= im->size > 0 ? (uint64_t)im->size : 0; alias_unlink(im); vk_tex_view_drop_all(im); if (im->sub) vk_defer_free_image_sub(im->img, im->sub); else vk_defer_free_image(im->img, im->mem); free(im); }
++    vk_lrz_forget(im); if (im->full) { vk_defer_free_view(im->full); im->full = VK_NULL_HANDLE; } if (im->lin_mem) nvn_dirty_release(im->lin_mem, im->lin_len); if (im->packaged && !im->pkg_released && im->pkg_mem) nvn_dirty_release(im->pkg_mem, im->pkg_len); g_img_n--; g_img_bytes -= im->size > 0 ? (uint64_t)im->size : 0; alias_unlink(im); vk_tex_view_drop_all(im); if (im->sub) vk_defer_free_image_sub(im->img, im->sub); else vk_defer_free_image(im->img, im->mem); free(im); }
+ static void evict_overlaps(uint64_t pool, int64_t off, int64_t size) {
+     akey ks[64]; int n = 0;
+     for (uint32_t i = 0; i < g_by_key.cap && n < 64; i++) {
+diff --git a/nxnative/dm/android/shaders/rot.frag b/nxnative/dm/android/shaders/rot.frag
+index a42c9a3..86f19bf 100644
+--- a/nxnative/dm/android/shaders/rot.frag
++++ b/nxnative/dm/android/shaders/rot.frag
+@@ -2,4 +2,26 @@
+ layout(location = 0) in vec2 uv;
+ layout(location = 0) out vec4 color;
+ layout(set = 0, binding = 0) uniform sampler2D tex;
+-void main() { color = texture(tex, uv); }
++// mode 0: copy the bytes as they are (the image and the target have the same sRGB-ness). 1: the source is UNORM and the
++// target is sRGB: decode before writing, so the target's encode stores the source's bytes unchanged. 2: the source is
++// sRGB and the target is UNORM: encode before writing, so the target stores the source's bytes unchanged. This is the
++// fallback for an Android surface that offers only one of the two formats (gfx_vk_present.c swap_make).
++layout(push_constant) uniform P { vec4 m; vec2 t; int mode; } p;
++vec3 srgb_to_linear(vec3 c) {
++    c = clamp(c, 0.0, 1.0);
++    vec3 lo = c / 12.92;
++    vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
++    return mix(lo, hi, step(vec3(0.04045), c));
++}
++vec3 linear_to_srgb(vec3 c) {
++    c = clamp(c, 0.0, 1.0);
++    vec3 lo = c * 12.92;
++    vec3 hi = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055;
++    return mix(lo, hi, step(vec3(0.0031308), c));
++}
++void main() {
++    vec4 c = texture(tex, uv);
++    if (p.mode == 1) c.rgb = srgb_to_linear(c.rgb);
++    else if (p.mode == 2) c.rgb = linear_to_srgb(c.rgb);
++    color = c;
++}
+diff --git a/nxnative/dm/tools/nx_extract/Program.cs b/nxnative/dm/tools/nx_extract/Program.cs
+index 9fc86a4..24a306f 100644
+--- a/nxnative/dm/tools/nx_extract/Program.cs
++++ b/nxnative/dm/tools/nx_extract/Program.cs
+@@ -54,9 +54,10 @@ static class P {
+     static int Extract(string[] a) {
+         bool manifest = Array.IndexOf(a, "--manifest") >= 0; a = Array.FindAll(a, s => s != "--manifest");
+         g_allow = Array.IndexOf(a, "--allow-damaged") >= 0; a = Array.FindAll(a, s => s != "--allow-damaged");
+-        if (a.Length < 4) { Console.Error.WriteLine("usage: nx_extract <prod.keys> <base.nsp> <update.nsp|-> <out dir> [base RomFS dir] [--manifest] [--allow-damaged]\n       nx_extract <prod.keys> --aoc <dlc.nsp> <out dir>\n       nx_extract <prod.keys> --sysdata <firmware dir> <title id> <out dir>"); return 2; }
++        if (a.Length < 4) { Console.Error.WriteLine("usage: nx_extract <prod.keys> <base.nsp> <update.nsp|-> <out dir> [base RomFS dir] [--manifest] [--allow-damaged]\n       nx_extract <prod.keys> --aoc <dlc.nsp> <out dir>\n       nx_extract <prod.keys> --aoc-xci <card.xci> <title id> <out dir>\n       nx_extract <prod.keys> --sysdata <firmware dir> <title id> <out dir>"); return 2; }
+         KeySet ks = ExternalKeyReader.ReadKeyFile(a[0]);
+         if (a[1] == "--aoc") return Aoc(ks, a[2], a[3]);
++        if (a[1] == "--aoc-xci") { if (a.Length < 5) { Console.Error.WriteLine("usage: nx_extract <prod.keys> --aoc-xci <card.xci> <title id> <out dir>"); return 2; } return AocXci(ks, a[2], Convert.ToUInt64(a[3], 16), a[4]); }
+         if (a[1] == "--sysdata") { if (a.Length < 5) { Console.Error.WriteLine("usage: nx_extract <prod.keys> --sysdata <firmware dir> <title id> <out dir>"); return 2; } return SysData(ks, a[2], Convert.ToUInt64(a[3], 16), a[4]); }
+         var basePkg = OpenNsp(ks, a[1]); var updPkg = a[2] == "-" ? null : OpenNsp(ks, a[2]);
+         // A package can hold the game's update as well (a cartridge dump rebuilt with the update merged in): the game is
+@@ -126,6 +127,17 @@ static class P {
+         return 0;
+     }
+ 
++    // A cartridge holds every title in one secure partition: pick the add-on content by its title ID instead of the first data NCA.
++    static int AocXci(KeySet ks, string xci, ulong id, string outDir) {
++        var pkg = OpenNsp(ks, xci);
++        Nca data = pkg.Find(n => n.Header.TitleId == id && (n.Header.ContentType == NcaContentType.PublicData || n.Header.ContentType == NcaContentType.Data))
++                   ?? throw new Exception($"no data NCA of {id:x16} in the card");
++        Console.WriteLine($"add-on content {data.Header.TitleId:x16}");
++        Directory.CreateDirectory(outDir);
++        Copy(new RomFsFileSystem(data.OpenStorage(NcaSectionType.Data, IntegrityCheckLevel.ErrorOnInvalid)), outDir, null);
++        return 0;
++    }
++
+     // System data from a firmware dump: every .nca in the folder (a file, or a folder of 00, 01... parts as the NAND keeps large ones), the data NCA whose title ID matches
+     static int SysData(KeySet ks, string dir, ulong id, string outDir) {
+         Nca data = null; int n = 0;
+diff --git a/porter/datapack.py b/porter/datapack.py
+index 0134a8f..bc4cd69 100644
+--- a/porter/datapack.py
++++ b/porter/datapack.py
+@@ -93,6 +93,9 @@ def build(dst, *, profile, version, display, patched, romfs, shaders, aoc=None,
+     if aoc: rows.append(f'DM_AOC_DIR={base}/aoc')   # the pack's own folder
+     if sysdata: rows.append(f'DM_SYSDATA={base}/sysdata')
+     rows += profile.env + list(env)
++    # the 60 fps table lives in the pack itself: the porter's row names the phone that built it (/sdcard/Android/data/<package>/files),
++    # which is not where an in-app pack lies (the app's own folder), so point it at this pack
++    rows = [f'DM_FPS_LOCKS={base}/fpslock.tsv' if row.startswith('DM_FPS_LOCKS=') else row for row in rows]
+     if bad := settings_registry.check_env(rows, ('profile', 'porter'), 'env.txt '): raise ValueError('; '.join(bad))   # nxnative/dm/settings.tsv
+     (tmp / 'env.txt').write_text('\n'.join(rows) + '\n', encoding='utf-8', newline='\n')
+     if sets := {**profile.settings, **(settings or {})}: (tmp / 'settings.txt').write_text(''.join(f'{k}={v}\n' for k, v in sets.items()), encoding='utf-8', newline='\n')
+diff --git a/porter/pipeline.py b/porter/pipeline.py
+index 12c2b00..0cf00bd 100644
+--- a/porter/pipeline.py
++++ b/porter/pipeline.py
+@@ -915,7 +915,7 @@ class Port:
+             PROG.stage('UE inline shaders', step=f'{len(picks):,} packages, {total / 2**30:.1f} GB')
+             say(f'{len(picks):,} Oodle packages hold the shaders of {v} ({total / 2**30:.2f} GB decoded in {len(plan)} batches): decoding them with the game\'s own Oodle')
+             spool = ue_inline.Spool(self.work / 'tmp' / 'ue_records' / 'records.bin')
+-            got = done = 0; t0 = time.monotonic(); stats = {}
++            got = done = 0; t0 = time.monotonic(); stats = {}; dump = [2, self.logs]
+             try:
+                 for i, (pak, entries) in enumerate(plan, 1):
+                     job, meta = ue_inline.job(pak, entries, uepak)
+@@ -923,10 +923,17 @@ class Port:
+                     at = 0
+                     for name, blocks in meta:
+                         data = b''.join(ans[at:at + len(blocks)]); at += len(blocks); done += len(data)
+-                        for record, st, key in ue_inline.scan(data, name, uepak, stats):
++                        for record, st, key in ue_inline.scan(data, name, uepak, stats, dump):
+                             got += 1; spool.add(record, st, key)
++                    for line in stats.get('hex', [])[:12]: say('  ' + line)
++                    stats['hex'] = []
++                    for sname in stats.get('sample', []):
++                        say(f'  sample of the layout taken: {self.logs}/ue_sample.bin (+ ue_sample.md) from {sname}')
++                        stats['sample'] = []
+                     say(f'  batch {i}/{len(plan)}: {done / 2**30:.2f} of {total / 2**30:.2f} GB, {len(spool.entries):,} shaders kept, '
+-                        f'LSLG {stats.get("lslg", 0):,} (bad tag {stats.get("bad_tag", 0):,}, bad control {stats.get("bad_control", 0):,}, bad code {stats.get("bad_code", 0):,}), {time.monotonic() - t0:.0f}s')
++                        f'LSLG {stats.get("lslg", 0):,}, control {stats.get("ctl", 0):,}, paired {stats.get("paired", 0):,} '
++                        f'(bad tag {stats.get("bad_tag", 0):,}, control {stats.get("bad_control", 0):,}, code {stats.get("bad_code", 0):,}, '
++                        f'ctl-len {stats.get("ctl_len_bad", 0):,}, code-off {stats.get("code_off_bad", 0):,}, code-len {stats.get("code_len_bad", 0):,}), {time.monotonic() - t0:.0f}s')
+                     PROG.set(step=f'{i}/{len(plan)} batches, {len(spool.entries):,} shaders')
+             finally: spool.close()
+             paths = ue_inline.write_archives(spool, out)
+diff --git a/porter/revision.py b/porter/revision.py
+index f9b288b..6f84b95 100644
+--- a/porter/revision.py
++++ b/porter/revision.py
+@@ -17,8 +17,11 @@ so its host is this base's — a pack from 0.3.0 keeps its 0.3.0 host otherwise,
+ event, RX/RY appended; the pad table's dev line carries ztrig/rxstick and coded): the app sends them, so a pack's
+ runtime has to be rebuilt for the host to read them — the old host takes ten axes and ignores the new rows, and the
+ roles stay off without a word.
++9: the present path keeps the window texture's bytes when the surface offers only the other sRGB format
++(the shader fallback in gfx_vk_present.c): no new JNI surface, but every pack's runtime is rebuilt so the
++lighter picture is actually gone after the app update.
+ """
+-PLAYER_API_REVISION = 8
++PLAYER_API_REVISION = 9
+ 
+ # The game profiles the player imports (a package of nxnative/dm/games/<title ID>/ folders) into their own folder: what the package was cut from.
+ # PROFILES_REVISION counts the syncs of upstream's profiles (1: the first sync, seedds/nxnative at PROFILES_COMMIT); PROFILES_COMMIT is the upstream commit the
+diff --git a/porter/ue_inline.py b/porter/ue_inline.py
+index 6e8fe17..038a430 100644
+--- a/porter/ue_inline.py
++++ b/porter/ue_inline.py
+@@ -101,21 +101,59 @@ def answer(data, count):
+     return out
+ 
+ 
+-def scan(data, label, uepak, stats=None):
+-    """The shader records a decoded package holds. The cooked package keeps each record inline as an LSLG record (the magic, the stage
+-    tag, a header, the code area, its length, the control section), with no length in front of it (It Takes Two's .uexp: the survey found
+-    the magic at 8,351 in a material package and the control at 8,885). A record's extent is read from the control section: the magic's
+-    own length field (magic − 4) and the code length the control holds at +0x704 give the code area's start, and the record runs to the
+-    control's end. The 4.18 shape (an i32 length in front of the magic) is read too, and a package with no raw record is tried for the
+-    zlib streams that inflate to one (the survey found none here, but a package may still use it). → [(raw record, stage, shader key)].
+-    The record is validated the way shader_split's reader validates it and keyed the way it keys it; stats (a dict) counts what was seen
+-    and why it was refused."""
++def scan(data, label, uepak, stats=None, dump=None):
++    """The shader records a decoded package holds. The cooked package keeps each record inline as an LSLG record (the magic, the stage tag,
++    a header, a length, the code area, a length, the control section). A record's extent is read from the control section: its own length
++    field (magic − 4) and the code length the control holds at +0x704 put the code area's start, which the length field before it must
++    repeat. The 4.18 shape (an i32 length in front of the magic) is read too, and a package with no raw record is tried for the zlib streams
++    that inflate to one. → [(raw record, stage, shader key)]. stats counts what was seen and why it was refused; dump writes the bytes
++    around the first records of a run (a list [budget, directory]) so a run that finds nothing leaves evidence."""
+     import bisect
+     out, seen = [], set()
+     if stats is not None:
+-        for k in ('lslg', 'paired', 'bad_tag', 'bad_control', 'bad_code', 'bad_length'):
++        for k in ('lslg', 'ctl', 'paired', 'bad_tag', 'bad_control', 'bad_code', 'bad_length', 'ctl_len_bad', 'code_off_bad', 'code_len_bad', 'lz4'):
+             stats.setdefault(k, 0)
+ 
++    if dump and dump[0] > 0 and 'globalshadercache' in label.lower() and len(stats.get('sample', [])) == 0:
++        import pathlib   # the engine's global cache: one package with a record for every shader the game has, the best sample of the layout
++        d = pathlib.Path(dump[1]); d.mkdir(parents=True, exist_ok=True)
++        i = data.find(b'LSLG')
++        if i >= 0:
++            a = max(0, i - 32); chunk = data[a:a + 24576]
++            (d / 'ue_sample.bin').write_bytes(chunk)
++            cols = [m.start() for m in re.finditer(b'LSLG', data)][:40]
++            ctls = [m.start() for m in re.finditer(CTL_MAGIC, data)][:40]
++            lines = [f'package: {label}', f'slice {a:#x}..{a + len(chunk):#x} ({len(chunk)} bytes), first LSLG at {i:#x}',
++                     'LSLG: ' + ', '.join(f'{x:#x}' for x in cols), 'CTL:  ' + ', '.join(f'{x:#x}' for x in ctls), '',
++                     'hex (16 bytes a line, offset from the slice):']
++            for o in range(0, len(chunk), 16):
++                lines.append(f'{a + o:08x}  ' + ' '.join(f'{x:02x}' for x in chunk[o:o + 16]))
++            (d / 'ue_sample.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
++            stats.setdefault('sample', []).append(label)
++            dump[0] -= 1
++
++    def lz4_at(q):
++        """The record whose LZ4 block starts a few bytes before the LSLG at q: Unreal keeps each shader as an i32 stored length, an LZ4 block
++        (whose first literal run is the record itself, so the token and its literal length sit right before LSLG), an i32 raw length and a u8
++        frequency (FShaderMapResourceCode). → (record, frequency) or None. A block that decodes to its raw length as an LSLG record is real."""
++        import lz4.block
++        for k in range(4):
++            t = q - 1 - k
++            if t < 8: return None
++            tok = data[t]
++            if tok >> 4 < 15 and k: continue
++            if tok >> 4 == 15 and k:
++                if any(x != 0xff for x in data[t + 1:q - 1]) or data[q - 1] == 0xff: continue
++            if tok >> 4 < 15 and k == 0 and tok >> 4 < 4: continue
++            n = int.from_bytes(data[t - 4:t], 'little')
++            if not 8 <= n <= len(data) - t: continue
++            raw = int.from_bytes(data[t + n:t + n + 4], 'little')
++            if not 0x100 <= raw <= (1 << 27) or t + n + 5 > len(data): continue
++            try: d = lz4.block.decompress(data[t:t + n], uncompressed_size=raw)
++            except Exception: continue
++            if len(d) == raw and d[:4] == b'LSLG': return d, data[t + n + 4]
++        return None
++
+     def take(record, at):
+         rec = uepak.lslg(record)
+         if not rec:
+@@ -133,26 +171,23 @@ def scan(data, label, uepak, stats=None):
+         seen.add(at); out.append((record, st, hashlib.sha1(ctl[:ctl_len(ctl)] + code).digest()))
+ 
+     ctl_at = [m.start() for m in re.finditer(CTL_MAGIC, data)]
++    if stats is not None: stats['ctl'] += len(ctl_at)
++    if stats is not None and ctl_at and data.find(b'LSLG') >= 0 and len(stats.get('hex', [])) < 12:
++        i0 = data.find(b'LSLG'); k0 = next((k for k in ctl_at if k > i0), None)
++        if k0 is not None:
++            u = lambda at: int.from_bytes(data[at:at + 4], 'little')
++            stats.setdefault('hex', []).append(f'HEX {label} LSLG@{i0:#x}: {data[i0:i0 + 112].hex()}')
++            stats['hex'].append(f'HEX {label} CTL@{k0:#x} pre16={data[k0 - 16:k0].hex()} at20={u(k0 + 0x20):#x} at704={u(k0 + 0x704):#x} head96={data[k0:k0 + 96].hex()}')
+     for m in re.finditer(b'LSLG', data):
+         i = m.start()
+         if stats is not None: stats['lslg'] += 1
+         if i in seen: continue
+-        # the legacy shape first (an i32 length right in front of the magic): the whole record is that many bytes
+-        n = int.from_bytes(data[i - 4:i], 'little') if i >= 4 else 0
+-        if 2 <= n <= len(data) - i: take(data[i:i + n], i)
+-        if i in seen: continue
+-        # the package's own shape: pair the magic with a control section after it
+-        j = bisect.bisect_left(ctl_at, i)
+-        for k in ctl_at[j:j + 4]:
+-            if k - i < 8 or k + 0x708 > len(data): continue
+-            nctl = int.from_bytes(data[k - 4:k], 'little')
+-            if not 0x24 <= nctl <= len(data) - k: continue
+-            ncode = int.from_bytes(data[k + 0x704:k + 0x708], 'little')
+-            c = k - 4 - ncode
+-            if c < i + 8 or int.from_bytes(data[c - 4:c], 'little') != ncode: continue
+-            if stats is not None: stats['paired'] += 1
+-            take(data[i:k + nctl], i)
+-            if i in seen: break
++        got = lz4_at(i)
++        if got:
++            if stats is not None: stats['lz4'] += 1
++            take(got[0], i)
++            if i in seen: continue
++        take(data[i:i + 0x1000] if i + 0x1000 <= len(data) else data[i:], i)   # a stored record: no length in front of it
+     if not out:
+         for m in ZLIB_HEAD.finditer(data):
+             i = m.start(); n = int.from_bytes(data[i - 4:i], 'little') if i >= 4 else 0

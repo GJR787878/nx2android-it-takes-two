@@ -7,6 +7,16 @@ package.
 
 **No game data is included.** You still need your own legally obtained XCI and `prod.keys`.
 
+## For AI reviewers / agents
+
+This is a release snapshot, not the full upstream Git history. Read these before judging the
+tree or the test status:
+
+- [`AI_CONTEXT.md`](AI_CONTEXT.md) — purpose, base commits, verified facts and known issues.
+- [`CHANGES.md`](CHANGES.md) — the 13 modified files and the two added asset trees.
+- [`SOURCE_MAP.md`](SOURCE_MAP.md) — why the 184 upstream profiles and `docs/images` are absent.
+- [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch) — the exact tracked-file diff.
+
 ## Latest build
 
 | Item | Value |
@@ -33,10 +43,12 @@ The APK is in **Releases**, not in the Git tree, because it is over GitHub's 100
 - `logs/` — alpha11 30 fps, alpha12 60 fps, alpha13 60 fps log archives.
 - `docs/IT2-完整版解锁说明.md` — the full-game unlock notes.
 - `docs/apk-sha256-v13.txt`, `docs/profiles-r2-it2.sha256` — checksums.
+- `AI_CONTEXT.md`, `CHANGES.md`, `SOURCE_MAP.md`, `patches/` — the AI/source-reading context.
 
 The complete source is under the repository root; `nxnative/dm/games` keeps only
-`010092A0172E4000` to keep the snapshot small. The upstream profile tables are not duplicated here.
-The original upstream README is kept as `docs/README-upstream.md`.
+`010092A0172E4000` plus the upstream profile README to keep the snapshot small. The upstream
+profile tables are not duplicated here. The original upstream README is kept as
+`docs/README-upstream.md`.
 
 ## Downloads
 
