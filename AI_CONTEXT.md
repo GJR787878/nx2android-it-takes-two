@@ -15,8 +15,10 @@ copied from a working tree, and the upstream history is not in this repository.
 - Game: **It Takes Two** (Switch), title ID `010092A0172E4000`, build `v131072 / 1.0.2`.
 - Host: nx2androidX, package `com.gjr.nx2androidx`, `arm64-v8a`, `targetSdk 28`.
 - Latest build: **alpha13**, `versionCode 32`, `versionName 0.4.1-alpha13`.
-- Signing: alpha13 used the debug keystore. A CI build needs a stable key to install over it;
-  the runner's throwaway debug key is not the same key.
+- Signing: alpha13 and the successful CI build in this fork use the same debug keystore
+  (certificate SHA-256 `2224ed75eecc74c5e9ca4adedf94ab2ddb9e3c28b09e049fd09c88244111c3e0`),
+  so the CI APK installs over alpha13. The keystore and its password/alias are repository
+  secrets; no key is committed.
 - Base of the port changes: `GJR787878/nx2androidX`, branch `it2-diag`.
   - sRGB/present commit: `e850f3ad95af44c8e63d681ebb8805efebee8597`
   - revision 9 commit: `6bd4a9f4641f5cf726836481e300c1523f444cbb`
@@ -75,17 +77,19 @@ Relevant code: `nxnative/dm/android/gfx_vk_present.c` (`present_one`, `present_w
 - The application pool is still 3.21 GB; it was not raised. Later chapters can exhaust it.
 - Alias stale reads remain; they are a visual-correctness risk, not a confirmed crash cause.
 - No tombstone or `logcat -b crash` is in the provided logs.
-- There is no successful CI run in this repository yet. The workflow exists, but it has not
-  been made green.
+- The test suite is still not green. The CI build workflow deliberately does not run it; a
+  green APK artifact is not a green test suite.
 
 ## CI status and test caveat
 
-`.github/workflows/android-apk.yml` is active. It is a release-style build: it downloads the
-rootfs/toolchain, runs the tests, builds with Gradle and uploads the APK as an artifact; on a
-`v*` tag it also attaches the APK and profiles package to the Release.
+This fork's `.github/workflows/android-apk.yml` is a working build, not a placeholder. A
+`workflow_dispatch` run builds the payload and the APK and uploads `nx2android-android-apk`;
+a `v*` tag attaches the APK and profiles package to the matching Release. Run
+`45254511512` succeeded in 7m26s and produced a 259,504,559-byte APK with SHA-256
+`587f4d1d693a86fc53bfd48ac157c0579c8a10bada54db2da0991ca588a66396`.
 
-At snapshot time, `python -m unittest discover tests` is **not green** on this tree. Known
-source-level blockers include:
+The workflow does **not** run the tests: `python -m unittest discover tests` is still not green
+on this tree. Known source-level blockers include:
 
 - `android/app/src/main/java/com/nx/android/game/GameActivity.kt` has a hard-coded Chinese
   fragment `"60 帧"` in an English log line; `tests/test_app_text.py` rejects it.
@@ -94,14 +98,15 @@ source-level blockers include:
 - `tests/test_docs_tables.py` and the README image test need the omitted profiles and
   `docs/images`.
 
-Do not treat a red test run as proof that the native port cannot build. It is a snapshot of a
-working build with the packaging/test inputs deliberately slimmed. See `SOURCE_MAP.md` for the
-missing inputs.
+Do not treat a red test run as proof that the APK cannot build: it is a snapshot of a working
+build with packaging/test inputs deliberately slimmed. The build workflow was validated
+separately. See `SOURCE_MAP.md` for the missing inputs.
 
 ## Do not assume
 
-- Do not assume `nxnative/dm/games` contains all 185 profiles; it contains only the IT2 two-file
-  profile plus the upstream profile README. The release package has the full set.
+- Do not assume `nxnative/dm/games` contains all 185 profiles; it contains the four upstream
+  scripts (`game.py`, `profile_guess.py`, `settings.py`, `settings.tsv`), the README, and the
+  IT2 two-file profile. The release package has the full set.
 - Do not assume `docs/images` exists; it was omitted to keep the snapshot small.
 - Do not treat alpha13 as “sRGB fixed”. The honest status is “runs, sRGB fallback not active”.
 - Do not commit a keystore, `prod.keys`, game dumps, RomFS or data packs to make CI work.
