@@ -32,7 +32,7 @@ The APK is in **Releases**, not in the Git tree, because it is over GitHub's 100
 
 ## What is in this repository
 
-- `android/`, `porter/`, `nxnative/`, `docs/`, `scripts/` — the nx2androidX source snapshot with
+- `android/`, `porter/`, `nxnative/`, `packaging/` — the nx2androidX source snapshot with
   the It Takes Two changes (sRGB present path, DLC injection, 60 fps environment, profile
   handling, `nx_extract --aoc-xci`, and profile/revision bumps).
 - `nxnative/dm/games/010092A0172E4000/` — the new `game.tsv` + `android.tsv` profile.
