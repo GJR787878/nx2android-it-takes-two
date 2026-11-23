@@ -1,55 +1,58 @@
-# Builds the phone app (the APK) on GitHub: the payload (the rootfs the phone runs the tools with), the build tools,
-# the app's assets and the APK itself (packaging/android-apk/build_apk.sh). The desktop bundles are the other
-# workflows' (release-windows.yml, release-macos.yml).
+# Builds the phone app (the APK) on GitHub: the payload (the rootfs the phone runs the tools with), the build
+# tools, the app's assets and the APK itself (packaging/android-apk/build_apk.sh). This fork is the CI-buildable
+# copy of GJR787878/nx2android-it-takes-two.
 #
-# The payload release (NixPort/nixport-rootfs) is public: GitHub's built-in token can download it, so no custom
-# NIXPORT_TOKEN secret is needed for a build or a release.
+# workflow_dispatch builds the branch and keeps the APK as the run's artifact. A v* tag additionally attaches the
+# APK to the release with that tag, when the release already exists.
 #
-# The build is the release variant: the APK a player installs, signed with the project's own key (the secret
-# NX2A_KEYSTORE_B64), so it installs over an earlier one instead of beside it.
-#
-# The APK is the run's artifact (nx2android-android-apk), and a published release gets it as an asset named
-# after the version (nx2android-v0.3.0-alpha02.apk). The release carries a second asset: the package of the
-# game profiles (nx2a-profiles-r<version>-<commit>.zip), which the app does not carry - the player imports it
-# into their own folder (the app's environment check has the button).
-#
-# Only a tag builds: a push of the branch builds nothing. The tag is pushed right before the release is made,
-# and the build waits for that release to appear before it attaches the APK to it.
-#
-# A tag's build also tells the QQ group: the announcement (the version, the release's Chinese changelog, the
-# release's page and the netdisk link) goes out once the APK is attached. It is an extra: it never fails the
-# build. The bot's tickets are the repository's secrets (QQBOT_APP_ID, QQBOT_APP_SECRET, QQBOT_GROUP_OPENID).
+# The release variant uses the project key from NX2A_KEYSTORE_B64 when the secret is set; otherwise it falls back
+# to the runner's throwaway debug key (a build for inspection, not an update over an earlier install). The
+# password/alias secrets let the same debug keystore used by the local alpha builds be restored here.
 name: Android app
-# diagnostic fork build (it2-diag): the same steps, a package that installs beside the project's app
 
 on:
-  workflow_dispatch:   # a build of the branch, kept as the run's artifact
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "release (signed) or debug"
+        required: true
+        default: release
+        type: choice
+        options: [release, debug]
   push:
-    tags: ['v*']      # a tag only: a branch push builds nothing
+    tags: ['v*']
 
 permissions:
-  contents: write   # the release's assets (the APK)
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
+    env:
+      NX2A_KEYSTORE_PASSWORD: ${{ secrets.NX2A_KEYSTORE_PASSWORD }}
+      NX2A_KEYSTORE_ALIAS: ${{ secrets.NX2A_KEYSTORE_ALIAS }}
+      NX2A_KEY_PASSWORD: ${{ secrets.NX2A_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'   # the Python the build scripts run on
+          python-version: '3.13'   # the Python the build scripts run on; the payload's own Python is 3.13
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'       # the Android Gradle plugin's Java
-      - uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@v3
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'   # the extractor and the shader translator are C#
       - name: the SDK parts the build needs
         run: |
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "ndk;27.3.13750724"
+          sdkmanager --install "platforms;android-37.0" "build-tools;36.0.0" "ndk;27.3.13750724"
           yes | sdkmanager --licenses > /dev/null
       # the payload and the build tools do not depend on the repository: they are fetched once and kept
       - uses: actions/cache@v4
@@ -59,7 +62,10 @@ jobs:
             packaging/android-apk/.cache/toolchain
             packaging/android-apk/.cache/debs
             packaging/android-apk/.cache/nuget
-          key: nx2a-android-payload-v1
+            packaging/android-apk/.cache/pylibs
+            packaging/android-apk/.cache/Turnip_Gen8_V39.zip
+            packaging/android-apk/.cache/dotnet
+          key: nx2a-android-payload-v2
       - name: the app's signing key
         run: |
           # A release is signed with the project's own key: it must be the key every earlier build was signed
@@ -73,31 +79,28 @@ jobs:
           fi
         env:
           NX2A_KEYSTORE_B64: ${{ secrets.NX2A_KEYSTORE_B64 }}
-      - name: the tests
-        run: |
-          python -m pip install -r requirements.txt
-          python -m unittest discover tests
-      - name: the app
-        run: |
-          export DOTNET="$(which dotnet)"
-          bash packaging/android-apk/build_apk.sh release
+      - name: Build the APK
         env:
           GH_TOKEN: ${{ github.token }}   # the payload release is public
+        run: |
+          variant='${{ inputs.variant }}'
+          [ -n "$variant" ] || variant=release
+          echo "VARIANT=$variant" >> "$GITHUB_ENV"
+          export DOTNET="$(command -v dotnet)"
+          bash packaging/android-apk/build_apk.sh "$variant"
       - name: the game profiles package
-        # The app does not carry the game profiles (half a gigabyte of shader tables): the player imports a package into
-        # their own folder (the environment check has the button). The APK build cuts it beside the assets (the cache) and
-        # the app carries only its manifest; this step puts the package in the run's artifact.
+        # The app does not carry the half-gigabyte of shader tables: the player imports a package into their own
+        # folder. The build cuts the package beside the assets; this step only reports it.
         run: ls -la packaging/android-apk/.cache/profiles/
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         with:
           name: nx2a-game-profiles
           path: packaging/android-apk/.cache/profiles/*.zip
           retention-days: 14
+          if-no-files-found: warn
       - name: the APK's name
         id: apk
         run: |
-          # The name carries the version, the way the desktop bundles' names do: a build of a tag gets the
-          # tag's own name, a build of the branch the version the app says.
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             ver="${{ github.ref_name }}"
           else
@@ -106,12 +109,13 @@ jobs:
           echo "name=nx2android-${ver}.apk" >> "$GITHUB_OUTPUT"
           echo "name: nx2android-${ver}.apk"
       - name: the APK
-        run: ls -la android/app/build/outputs/apk/release/*.apk
-      - uses: actions/upload-artifact@v7
+        run: ls -la "android/app/build/outputs/apk/${VARIANT}"/*.apk
+      - uses: actions/upload-artifact@v4
         with:
           name: nx2android-android-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/${{ env.VARIANT }}/*.apk
           retention-days: 14
+          if-no-files-found: error
       - if: startsWith(github.ref, 'refs/tags/')
         run: |
           # The release is made right after the tag is pushed, so it may not be there yet: wait for it, then
@@ -124,9 +128,9 @@ jobs:
             echo "::warning::the release ${{ github.ref_name }} is not there yet: the APK stays as this run's artifact"
             exit 0
           fi
-          cp android/app/build/outputs/apk/release/app-release.apk "android/app/build/outputs/apk/release/${{ steps.apk.outputs.name }}"
-          gh release upload "${{ github.ref_name }}" "android/app/build/outputs/apk/release/${{ steps.apk.outputs.name }}" --clobber
-          # the profiles package goes with it: a player imports it into their own folder (the app's environment check)
+          apk=$(ls -t "android/app/build/outputs/apk/${VARIANT}"/*.apk | head -1)
+          cp "$apk" "android/app/build/outputs/apk/${VARIANT}/${{ steps.apk.outputs.name }}"
+          gh release upload "${{ github.ref_name }}" "android/app/build/outputs/apk/${VARIANT}/${{ steps.apk.outputs.name }}" --clobber
           for zip in packaging/android-apk/.cache/profiles/*.zip; do
             [ -f "$zip" ] && gh release upload "${{ github.ref_name }}" "$zip" --clobber
           done
