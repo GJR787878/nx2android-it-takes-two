@@ -1389,11 +1389,16 @@ def split_shaders(py, repo, roms, mains, pkg, env, logs, g, provisional=False, o
     aoc: the extracted DLC (extract_aoc), scanned too (DM_SPLIT_AOC): Xenoblade Chronicles 3's DLC archives hold shaders of their own"""
     names = ('shader_map.tsv', 'shader_facts.tsv', 'shader_pairs.tsv')
     PROG.stage('shader split', step='checking the inputs')   # then a spinner: shader_split.py writes the package and the tables only at the end
+    # A registered profile can be a two-file profile (game.tsv + android.tsv) with no shader
+    # tables: the It Takes Two profile in this repository is one. Its first port must take the
+    # split's tables as the profile's, the way a provisional profile does. Reuse is disabled
+    # while the tables are absent, or the second run would return before filling them in.
+    tables_missing = [n for n in names if not g.table(n).is_file()]
     kf = pkg.with_name(pkg.name + '.key')
     key = None if provisional or ALLOW_DAMAGED else fingerprint(('files', tool_files(repo)), ('files', profile_files(g)),
         *[x for r, m in zip(roms, mains) for x in (('files', [m]), ('tree', r), ('files', sorted((r.parent / 'glslc_capture').glob('*.glslc'))),
                                                    ('files', sorted((r.parent / 'ue_shaders').glob('*.ushaderbytecode'))))], *([('tree', aoc)] if aoc else []))
-    if key and pkg.is_dir() and (note := reused(kf, key)) is not None:
+    if key and pkg.is_dir() and not tables_missing and (note := reused(kf, key)) is not None:
         PROG.end(f'{note}, reused (inputs unchanged)'); return package_key(pkg)
     if oodle:   # the packs are decoded by the game's own Oodle in the Mac host (dm/host/hle_oodle.c)
         PROG.set(step="setting up the game's Oodle decoder"); env = dict(env, **oodle())
@@ -1404,7 +1409,9 @@ def split_shaders(py, repo, roms, mains, pkg, env, logs, g, provisional=False, o
     m = re.search(r'shaders: (\d+) \(', (logs / 'shader_split.log').read_text(errors='replace'))
     if m and m.group(1) == '0':   # dmsh_build.py would make no library, and the iOS shader step stop with no word of why
         raise BuildError('the shader split found no shaders in main or the RomFS: the game keeps them in a form shader_split.py does not read; locate them (docs/agents) and add a reader')
-    if provisional:   # a provisional profile takes the tables as they come
+    if provisional or tables_missing:   # a provisional or table-less profile takes the tables as they come
+        if tables_missing and not provisional:
+            PROG.say(f'game profile {g.id} has no {", ".join(tables_missing)}: taking the split tables as its first port\'s')
         for n in names: shutil.copyfile(tmp / 'tables' / n, g.table(n))
     else:
         # Data rows byte-identical to the profile's = the same game files the tables were built from; if not, stop (the profile's tables are left alone). Only data rows are compared: the header of Engage's profile tables was written by an older shader_split
