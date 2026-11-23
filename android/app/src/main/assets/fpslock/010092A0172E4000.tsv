@@ -1,0 +1,5 @@
+# Written by nx2android's porter from the FPSLocker-Warehouse config https://raw.githubusercontent.com/masagrator/FPSLocker-Warehouse/v4/SaltySD/plugins/FPSLocker/patches/010092A0172E4000/C4067E8CB3258656.yaml (masagrator and contributors); read by hle_fpslock.c (DM_FPS_LOCKS)
+# entry <TAB> value type <TAB> main offsets (all but the last name a pointer) <TAB> values at 30 fps <TAB> at 60 fps <TAB> compare (type, offsets, operator, value; - = always)
+build	c4067e8cb3258656d8e9b448ee31aa38
+ALL_FPS entry 1	float	0xaccb3d8,0x0	29.0,29.0	14.5,14.5	-
+ALL_FPS entry 2	float	0xacf9130,0x0	30.0,30.0	62.0,62.0	-

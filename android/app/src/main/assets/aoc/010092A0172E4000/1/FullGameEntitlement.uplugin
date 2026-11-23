@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"Version": 0,
+	"VersionName": "0.1",
+	"FriendlyName": "FullGameEntitlement",
+	"Description": "",
+	"Category": "Entitlement",
+	"CreatedBy": "",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EnabledByDefault": true,
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false
+}

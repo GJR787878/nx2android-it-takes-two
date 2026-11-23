@@ -1,0 +1,46 @@
+# It Takes Two (Hazelight / Electronic Arts), Unreal Engine 4 with Nintendo's NVN RHI, Switch version 1.0.2.
+# The single 10 GB RomFS pak is an Unreal version 11 pak whose index holds no shader code archive: the
+# shaders are inline in the cooked packages (Oodle) beside Engine/GlobalShaderCache-GLSL_SWITCH.bin.
+# Started from the NSP script's provisional profile (nxnative/dm/games/profile_guess.py). Format: see
+# nxnative/dm/games/README.md.
+
+# ---- Identity ----
+title_id	010092A0172E4000
+program_id	010092A0172E4000
+
+# ---- App ----
+name	It Takes Two
+ipa	ItTakesTwo.ipa
+app_category	public.app-category.action-games
+
+# ---- Versions ----
+build	v131072	1.0.2	main=c4067e8cb3258656d8e9b448ee31aa38	subsdk0=d0f13015e5badf2243d60a2bc9b978dd	sdk=3644a6760469451cabc99f00c540acc2
+package	v131072
+shader_versions	v131072
+
+# ---- Files ----
+# Load order as on Horizon: main, subsdk* (NintendoSDK_movie), sdk.
+modules	main subsdk0 sdk
+romfs_marker	Nuts/Content/Paks/Nuts-Switch.pak
+zip_store	.pak:.metallib
+
+# ---- Graphics ----
+# 60 fps: the Switch build is capped at 30; the host writes its frame limit and present interval for
+# DM_FPS_TARGET=60. The game also runs at 30 (the Switch's own rate) when the target is 30.
+fps_target	60
+
+# ---- Memory ----
+# The NPDM declares 80 MB of system resource (virtual address memory). Unreal's nninitStartup reserves
+# a 62 GB region and FMallocBinned3 takes 37 GB of it; the host gives it the 64 GB alias region.
+# 256 MB stacks, 256 MB heap region, 3285 MiB application pool (the 4 GB Switch's pool).
+mem_reserve	0x1030000000
+mem_alias	0x1008000000
+mem_stack	0x10000000
+app_pool	0xCD500000
+sys_resource	0x5000000
+
+# ---- Shader split ----
+# The engine's global shader cache and the game's material shaders, the latter inline in the cooked
+# packages of Nuts-Switch.pak (porter/ue_inline.py reads the FShaderMapResourceCode records).
+shader_groups	GlobalShaderCache=global #Engine/=engine #Nuts/=game
+shader_note	It Takes Two shaders

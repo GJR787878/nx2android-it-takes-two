@@ -1,0 +1,11 @@
+# It Takes Two on Android (keys in docs/ARCHITECTURE.md "Game profiles on Android")
+# Hazelight / Electronic Arts, Unreal Engine 4 with NVN, Switch version 1.0.2 (v131072).
+# Tested on the OPPO OPD2409 (SM8750P, Android 17): the full game, all chapters, with the alpha13
+# runtime; 60 fps target. The title, the opening, the hub and the chapters play; saves and chapter
+# selection work. The known remaining issues are the sRGB window-surface fallback and alias stale reads.
+status	playable
+tested	v131072 OPPO OPD2409 (SM8750P, Android 17)
+package	org.nx2a.t010092a0172e4000
+orientation	landscape
+requires	bcn
+graphics	nvn

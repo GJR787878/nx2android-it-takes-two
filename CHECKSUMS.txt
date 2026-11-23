@@ -1,0 +1,14 @@
+nx2android-v0.4.1-alpha13-it2-srgb.apk
+  3886fc7e95a04ce50a3c60ffd0b311c64dc6685174843a5c58a32afdc1cd5622
+
+nx2a-profiles-r2-it2.zip
+  1061681ded85736b64ceae635866004df1088926d30d72c9dd2ca685b6f28e6c
+
+logs/IT2-30fps-alpha11-log.zip
+  21adfed0876d266679b2e715f00bdb711891cd28533b6b3d1c8a2c14ad889bd9
+
+logs/IT2-60fps-alpha12-log.zip
+  a0e55804014fc90bde40d84318d1a566d9cecffcbb10b010d7e7cdfbb58b1b35
+
+logs/IT2-60fps-alpha13-srgb-log.zip
+  635dcb0ed49a7b66ac1a1a7d3394acc2c2671da1825e2fe52018e57061a03fd2

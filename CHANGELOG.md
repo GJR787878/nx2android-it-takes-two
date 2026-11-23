@@ -1,0 +1,700 @@
+# Changelog
+
+The releases of nx2androidX, newest first. Each one carries the phone app's
+APK, signed with the project's own key, so a build installs over the one
+before it. The pre-releases (`-alphaNN`) are published as GitHub
+pre-releases: they do not become the repository's "Latest" release, so the
+players on the released version are not pushed onto an alpha.
+
+The release page has the APK and the full notes: <https://github.com/zFitness/nx2androidX/releases>.
+
+## v0.4.0-alpha03 - 2026-11-21
+
+### The app (the APK)
+
+#### Before you update · 更新之前(必读)
+
+- (EN) The game's runtime on the phone is rebuilt after this update, the
+  first time each game starts. The app now tells the host which axes a
+  controller uses and how that controller reports its face buttons; the
+  host of the previous version ignored both. The rebuild happens on the
+  phone and takes a few minutes per game - the library shows it.
+  Nothing has to be imported for this.
+- (中文) 本次更新之后,手机上的游戏运行库会重建一次(每个游戏第一次启动时)。
+  现在 App 会告诉宿主:手柄的摇杆/扳机在哪几根轴上,以及这颗手柄怎么上报面键;
+  旧版宿主会把这两项都丢掉。重建在手机上做,每个游戏几分钟,库页里能看到进度。
+  这一项不需要额外导入任何东西。
+- (EN) The two new games below are in the profiles package of this
+  release. Import it in the environment check (the "manage" box) to get
+  them.
+- (中文) 下面两款新游戏在本次的档案包里。到环境检查里(那个"管理"按钮)
+  导入即可。
+
+#### New
+
+- The gamepad's face buttons are one choice: by position (the Switch's
+  layout - X on top, Y on the left, A on the right, B at the bottom) or
+  by what the controller prints. It is set per controller in the gamepad
+  center and takes effect at once. The per-key rebinding is gone: it
+  needed a capture flow and a binding table, players got lost in it, and
+  a button that was rebound took another key's source away without
+  anyone seeing why. The center's scope shows what the game receives, so
+  pressing a button is the test.
+- The controller's axes are read the way that controller reports them.
+  The Xbox family (a USB xpad, a Bluetooth XInput pad) puts its triggers
+  on Z/RZ and its right stick on RX/RY - the opposite of the usual
+  layout - so those pads' triggers never fired and their right stick
+  never reached the game. The app now works the roles out of the
+  device's own ranges and the host uses them.
+- The touch stick starts where the thumb lands. The offset is taken from
+  the point the finger went down, not from the middle of the stick, so a
+  thumb on the rim has output right away; a small dead zone around that
+  point, and the rim is the full deflection. The right stick is finer at
+  low speed.
+- The game fills the cutout screen: the picture is centred on the whole
+  panel, so the black bars on the sides are the same width and the
+  camera hole sits in one of them.
+
+#### Fixed
+
+- A physical controller's stick value is clamped and its two axes share
+  the round gate. A value past 1 used to come out as the opposite
+  direction (the host packs the axes into 16 bits), and a square-gated
+  controller's corner - both axes at 1.0 - came out as a diagonal faster
+  than the game expects.
+- A game that reads a little past the end of its own image no longer
+  crashes at the start (The Legend of Zelda: Link's Awakening on Android:
+  about half of the launches died in the first frames).
+- The network clock answers offline with the host's time, so the saves
+  are dated right instead of 1970-01-01.
+- The log lines carry the time since the game started, and another
+  thread's text no longer lands in the middle of one.
+
+### The game profiles (the package the player imports)
+
+#### New games
+
+- Divinity: Original Sin 2 - Definitive Edition - playable. Update
+  1.0.12, 60 fps (30 on the Switch). Ported upstream and tested on the
+  Legion Y700 Gen 4 (Snapdragon 8 Elite, Adreno 830): from a new game
+  through the character creation, the intro movie, the prison ship and
+  Fort Joy's beach, with the pause menu and saving. The game's shaders
+  come out of its Larian packages, which the shader split now reads.
+- ROMANCE OF THE THREE KINGDOMS XIV (with the Diplomacy and Strategy
+  Expansion Pack) - playable, 30 fps as on the Switch. Ported upstream
+  and tested on the Xiaomi 2410DPN6CC (Snapdragon 8 Elite, Adreno 830).
+
+#### Changed games
+
+- Xenoblade Chronicles: Definitive Edition - the road to Colony 9 no
+  longer draws black (the road's normal map was read as a floating point
+  view, so it came out as per-pixel noise).
+- Cardfight!! Vanguard Dear Days 2 - the frame limiter sleeps until the
+  next frame is due: a little less of a core and a little less battery,
+  the same frame rate.
+
+### Community ports
+
+- **@n2ray** - the touch stick's new response (through the upstream #414).
+- **@elwoodight** - the stick's round gate and clamp, and the readable
+  zero slack behind each module on Android (through the upstream #420,
+  #419).
+- **@rospec14** - the game data on the SD card, the Xenoblade road fix
+  and the Vanguard frame limiter (through the upstream #433, #459, #454).
+- **@shadyrispy** - what Koei Tecmo's KTGL needs on Android, with
+  ROMANCE OF THE THREE KINGDOMS XIV (through the upstream #436).
+- **@zFitness** - the gamepad's face buttons as one layout choice (#54).
+
+## v0.4.0-alpha02 - 2026-11-20
+
+### The app (the APK)
+
+#### Before you update · 更新之前(必读)
+
+- (EN) This build fixes the runtime build on the phone. If you have not
+  imported the profiles package of v0.4.0-alpha01 yet, you still must:
+  the app runs the games on the new host (0.4.0), and the old package's
+  packs were built for the previous one. Import it in the environment
+  check (the "manage" box).
+- (中文) 本版修复了手机上的运行库构建。如果你还没有导入
+  v0.4.0-alpha01 的档案包,现在仍然必须导入:App 用新宿主(0.4.0)运行
+  游戏,旧档案包的数据包是按旧宿主构建的。到环境检查里(那个"管理"
+  按钮)导入。
+
+#### Fixed
+
+- A game that needs its runtime rebuilt on the phone builds it again.
+  The new host asked every profile for the picture the README shows and
+  looked for it in the app's own folder, where the pictures are not
+  shipped: the build failed with "no such file in the repository", and
+  every game whose profile names a picture could not be rebuilt. The
+  check now runs where the pictures are, and the phone leaves it out.
+  Sixty games had a picture in their profile: all of them build now.
+
+### The game profiles (the package the player imports)
+
+#### Changed games
+
+- None: no game's profile changed in this package (it is the same
+  package as v0.4.0-alpha01's).
+
+### Community ports
+
+- None: no pull request went into this release.
+
+## v0.4.0-alpha01 - 2026-11-20
+
+### The app (the APK)
+
+#### Before you update · 更新之前(必读)
+
+- (EN) This release moves the packs onto a new host (0.4.0). After the
+  app updates, you **must** import the new profiles package in the
+  environment check: the old package's packs were built for the
+  previous host and will not work with this app. The app will remind
+  you and point you there. Update the app first, then import the
+  package - both steps are required.
+- (中文) 本次更新更换了数据包运行的宿主(0.4.0)。更新 App 之后,
+  **必须**到环境检查里导入新的档案包:旧档案包的数据包是按旧宿主
+  构建的,和新版 App 不匹配,无法正常使用。App 会主动提醒并指路。
+  先更新 App,再导入档案包,两步都不能少。
+
+#### New
+
+- Cheats: the drawer has a cheats tab. Codes in the Atmosphere format
+  are matched to your game's build from two community libraries, or you
+  import a zip yourself. Every game starts with the cheats off, so a
+  bad code cannot crash the game in a loop.
+- Local multiplayer: every controller that connects becomes a player of
+  its own. The on-screen gamepad steps aside while a controller holds
+  player 1, a second controller drives player 2 (a port's ctl file can
+  too), and the rumble returns to the phone when player 1's controller
+  leaves. A controller that reconnects quickly keeps its player.
+- A new install of a game you already ported copies the RomFS and the
+  DLC from the old install on the device - you do not dig the dump out
+  again.
+- The library keeps the run button: a game starts without a detour.
+- Cancelling a port asks first, and the button stays through the whole
+  run.
+- The FAQ tells you what kills a build - the battery manager is the
+  first suspect - and what to do about it.
+
+#### Fixed
+
+- The builds page reads the game file again on every round, so a game
+  file you replaced is picked up without restarting the app.
+- On Adreno phones the geometry renders correctly now (NieR:Automata's
+  map was the proof), and Unreal games keep their particle textures.
+  A rare corruption from incomplete sampler hashing is gone.
+- The build result card is one row of actions, one color per outcome,
+  and every log has one home.
+
+### The game profiles (the package the player imports)
+
+#### New games
+
+- NieR:Automata The End of YoRHa Edition - boots with update 1.0.3, and
+  the map is drawn correctly after loading a save. Broader gameplay
+  checks are still pending, so expect rough edges.
+- The Legend of Zelda: Link's Awakening - playable on update 1.1.0,
+  verified on a Lenovo TB323FU. It runs at a dynamic 30/60 fps by
+  default; the stable-60 option stays off, it can judder on weaker
+  chips. It needs the firmware files.
+- Silver Pines - the v65536 update (1.0.1) plays, verified on the
+  Xiaomi 23117RK66C (Android 16).
+
+#### Changed games
+
+- Every pack in the package rebuilds against the 0.4.0 host, and many
+  games carry a frame-pacing preset now instead of a guess. A
+  re-import buys the engine fixes above for every game.
+- Unreal allocator patches arrived for OCTOPATH TRAVELER 0 (both
+  releases), DRAGON QUEST VII Reimagined, and FINAL FANTASY RESONANCE
+  (both releases).
+- FINAL FANTASY RESONANCE (Asian release): the missing fires were a
+  translator bug, fixed with the 0.4.0 host. The profile asks for the
+  Turnip driver.
+
+### Community ports
+
+- **@zFitness** - the game cheats: import from the library or a zip (#32).
+- **@zFitness** - Silver Pines (the v65536 update, 1.0.1) plays on Android (#40).
+- **@zFitness** - the FAQ says what kills a build, and the builds page reads the game file again (#41).
+- **@zFitness** - every log has one home (#43).
+- **@zFitness** - upstream 0.4.0 (75 commits) merged into the product line (#47).
+- **@zFitness** - the on-screen gamepad yields player 1 to a controller, and the ctl file drives player 2 (#48).
+- **@zFitness** - the library keeps the run button (#49).
+
+## v0.3.0-alpha16 - 2026-11-18
+
+### The app (the APK)
+
+#### Fixed
+
+- The patches of a profile the player imported reach the build now. The
+  separate profiles package had broken the ports: the rewriter never saw
+  an imported profile's own cuts, and the port failed - FINAL FANTASY
+  RESONANCE's allocator cut was missing, Unreal's own allocator reserved
+  38 GB of address space, and the port died. A port copies the imported
+  profile into the games folder before it reads it, refreshed at every
+  port, and takes the copy away when it is done.
+
+#### New
+
+- A game that compiles its own shaders at boot can be ported on the
+  phone: the capture stage runs the game's own GLSLC in the headless
+  host on the device. Such games were refused as Mac-only before.
+- A movie's clock follows the decoder's picture: an anime intro no
+  longer freezes on its first frame, and a movie that ends without a
+  final picture ends cleanly instead of on a black screen.
+- The builds page can tell when the player's profile package is older
+  than this build's, and points at the environment check, where the
+  newer package is imported.
+- An imported pack offers no "export" (it already is that folder), and
+  "move to the card" shows only when there is a card to move it to.
+- A style pass over the library and the environment check.
+
+### The game profiles (the package the player imports)
+
+#### New games
+
+- Catherine: Full Body (the Korean / Chinese v0 release) - ported by
+  @zfitness, at a held 30 fps as on the Switch, verified on device
+  (Legion Y700, Snapdragon 8 Elite, Adreno 830).
+
+#### Changed games
+
+- None: no other game's profile changed in this package.
+
+### Community ports
+
+- **@zfitness** - Catherine: Full Body (the Korean / Chinese v0 release),
+  brought up on Android (#28).
+- **@zfitness** - #29: the imported profile reaches the rewriter, and the
+  games folder is left clean when the port is done.
+
+## v0.3.0-alpha15 - 2026-11-17
+
+### Before you update
+
+- The app does not carry the game profiles any more. They are half a gigabyte of shader tables, and every release copied them again; this build carries none of them. Import the profiles package once after the update - it is the release's second file. The environment check has the button, and the profiles row's "manage" box can fetch this build's own package for you: the download is checked against the build's digest, so what arrives is what this build was made for. The imported layer lives outside the app's own storage, so an app update never touches it again.
+- A data pack made with this version needs this app to run: the pack no longer carries the runtime inside. The app keeps one runtime per game in its own folder and builds it when the game page opens. The games already on the phone keep working, and a rebuild moves them to the new layout.
+
+### New
+
+- The game page takes care of itself: it opens on a loading page that checks the game, rebuilds the runtime when the profile drifted (no confirmation asked), and starts the game. A failure shows the porter's reason with a retry. The "update runtime" chore is gone from the library.
+- Tapping a game asks the game's own process first: a running game is resumed, a dead one is refused - the library no longer greys cards out on its own guess.
+- A game can be pinned to the home screen from its detail panel: the shortcut goes through the same launch gate as a tap in the library, its id stays with the game, and the icon greys out when the game is deleted.
+- A port can leave the phone as one folder of plain files, and another phone's + button takes the folder in. The folder stays the player's own, wherever they put it, and the same game can sit in the library twice.
+- The help icon opens a FAQ page with the questions players keep asking, in the phone's language; the answers point at the place where the thing is done.
+- The build page says how many of the profiles are really ported: the package holds upstream's iOS profiles too, and those are experiments.
+- The layout editor hides a control on a long press.
+
+### Fixed
+
+- A pack carries its own profile now: the port writes the profile it used into the pack, and a rebuild reads it first, so a rebuild no longer needs the phone the pack was made on. One successful rebuild writes the profile back, so an older pack becomes self-sufficient after one update.
+- The runtime update puts the runtime back where the pack keeps it: an update used to leave a new folder behind while the pack's own host went stale. A pack holds one runtime now, not a pile of them.
+- The profiles package is reproducible: two cuts of the same content are the same file, so the app's digest check no longer calls an identical package "not this build's".
+- DARK SOULS: REMASTERED's re-port no longer dies in the shader split: every BND3 archive hit a broken name read (UnboundLocalError on the first entry). The reader has a test now.
+- The porter's answers come back on the app's main thread: a toast raised from the porter's own thread killed the app right after a successful profiles import.
+- The profiles chip says "not ready" in amber: it said "ready" in amber for everything else, and a missing package was not tellable from a working one.
+
+### Community ports
+
+- No pull request was merged into this repository itself, and no upstream sync came with this release.
+
+## v0.3.0-alpha14 - 2026-11-16
+
+### New games
+
+- 13 Sentinels: Aegis Rim (Asia) - the Chinese release (the Japanese and Korean ones too); it installs beside the western one, so both play on the same phone. Tested on the Xiaomi 23117RK66C: the port runs, the Chinese text and the cutscenes play, the save menu works, 58-59 fps at 1440p.
+
+### New
+
+- The port shows what it is doing: the rewriter's own progress lines reach the screen while the port runs, so a working port is not mistaken for a stuck one (a player sat 75 minutes in a run that needed about three, and gave up). The log bundle's device snapshot gives every relevant process's CPU time and age - the two numbers that tell a working process from a stuck one.
+- The pack follows the phone's language when the game has it: a Chinese phone packs a Chinese game in Chinese. OCTOPATH TRAVELER 0 no longer comes out with Korean strings and a Korean app name. The port never fails for it - it is a wish, not a demand.
+- The port says what became of the phone's language: when the game does not have it, the log says so instead of leaving the game's own first language there without a word.
+- The app names the netdisk folder in the port's log: a file in a synced netdisk folder that is not downloaded yet is read in pieces and dies at the extract as a broken file. The app points at the folder and asks for the file to be downloaded to the phone's own storage first.
+
+### Fixed
+
+- An archive too big for the phone's memory is mapped instead of refused: 13 Sentinels: Aegis Rim's 4.2 GB asset archive is now scanned without being read whole, and the game still splits into the same 751 shaders on the device.
+- A failed tool says why: its red line is printed before the log's tail and carried in the error message, instead of a tail of broken pipes hiding the reason fifty lines up.
+- A forked child that fails sends its reason through the pipe, and the parent prints it once.
+- The doctor's prod.keys row says what the file holds (the key names only, never their values) or why it cannot work: a title.keys file renamed as prod.keys used to pass the check and die far away, at the extract, with nothing pointing back at the keys.
+- A language tag with a region resolves: a phone's locale carries one (ja-JP, ko-KR, zh-Hans-CN), and every one of them missed the table, so the pack silently fell back to English for everybody but the Chinese phones.
+
+### Community ports
+
+- **@zfitness** - 13 Sentinels: Aegis Rim (Asia), the Chinese release, brought up on Android.
+- No pull request was merged into this repository itself, and no upstream sync came with this release.
+
+## v0.3.0-alpha13 - 2026-11-15
+
+### Before you update
+
+- The player API moved to revision 6 (the game's mode), so a data pack made with an older one is marked as needing a runtime update. "Update runtime" in the library rebuilds it in place: the game does not have to be ported again, and your saves are kept.
+- The host itself changed with this release (the upstream line's work), so the update brings the new engine fixes and the new tools with it. A pack that is not updated keeps running on the host it was built with.
+
+### New
+
+- The file managers see the app's own folders: the runtime rootfs, the tools, the hosts, the saves, the drivers and the logs show up as one root, and the player can read, create, rename, move and delete there without a computer. The switch is in Settings, About ("File manager access"), on by default; it takes effect at once, without a restart.
+- The system's game mode reaches the host: with the performance game mode on, the game keeps its own period and the device maker's interventions step aside. The app asks the system on every resume, so a mode changed while the game sits in the background is picked up. The games the host draws itself (the NVN and the Vulkan ones) are the ones it applies to.
+- A profile can compress its RomFS on the device (`romfs zstd`): the files that shrink are stored packed and read back on the device. Cardfight!! Vanguard Dear Days 2 uses it: 30.6 GB of extracted RomFS against 21 GB of XCI and update, 19.7 GB on the device.
+- The Legend of Zelda: Breath of the Wild turns the GPU's turbo on by default: the frame rate holds 60 where the GPU's governor would have lowered the clock. The cost is heat; `DM_GPU_TURBO=0` in env.txt turns it off.
+
+### Fixed
+
+- The GPU's clock control goes back to the phone when the game is paused or ends. It stayed at the highest clock after the game was backgrounded, which is hot and draws power.
+- The shader split does not read Unreal's modern paks whole: a modern Unreal game keeps its shaders in the shader code archives, which the split was reading whole to look for shader records and finding nothing. FINAL FANTASY RESONANCE's split took the process tree to 15.7 GB of memory on a 24 GB phone, and a phone with 11 GB was killed by the system mid-scan with no error line in the log. The same split now peaks at 810 MB and takes 8 s instead of 40 s, and the package is the same.
+- The shader split works on the desktop: it died with a pickling error as soon as the RomFS had a file to scan.
+- Pokémon Mystery Dungeon Rescue Team DX runs at 30 fps, as on the Switch; 60 fps with the porter's `--fps60`.
+- Mega Man Battle Network Legacy Collection Vol. 2 is playable: Battle Network 4, 5 and 6, with saving, loading, battles and the gallery.
+- Xenoblade Chronicles: Definitive Edition is tested to Colony 9, with the pause menu and saving; the later maps are not checked yet.
+
+### Engine (the upstream sync, 19 commits)
+
+- A batch of Vulkan and NVN fixes: the 32 separate sampler bindings a stage answers with, the shared linear and sRGB texture families, a compressed image drawn into through a block-size view keeps the view's format, the alpha coverage across the perspective variants, and an opt-in scratch target for an empty colour slot 0 (`DM_VK_SLOT0_FILL`, off by default).
+- The AVC video's frame layout and its crop, and the fatal allocation errors are kept in the log instead of being swallowed.
+- The performance work: the deferred uniform updates read from ordinary memory, the pool lookup cache is wider, and the game keeps its own period in the performance game mode.
+- The build fix: the NVN dirty message compiles under gcc's `-Werror`.
+
+### Community ports
+
+- **@rospec14** - the RomFS compression on the device, the 30 fps fix for Pokémon Mystery Dungeon Rescue Team DX, and the Xenoblade test with the Mega Man's status (through the upstream #371, #396, #395).
+- **@DeathKhan** - the 32 sampler bindings, the scratch target for the empty colour slot 0 and the compressed image's view format (through the upstream #256, #257, #393).
+- **@StepwiseCord804** - the deferred uniform updates with the wider pool lookup cache, Breath of the Wild's GPU turbo and the build fix (through the upstream #267, #382, #398).
+- **@thehobbit85** - the performance game mode for the NVN ports, the AVC frame layout and the shared texture families (through the upstream #300, #358, #363).
+- **@lianghx123** - the alpha coverage across the perspective variants (through the upstream #316).
+- No pull request was merged into this repository itself; all of it came in with the upstream sync. Everyone in this release's history is in the repository's contributor list.
+
+## v0.3.0-alpha12 - 2026-11-15
+
+### Before you update
+
+- "Update runtime" is more forgiving: the upstream sync changed the profile fingerprints, so an older data pack met a refusal where the player was pushed back to a full re-port. The app asks now instead of ending the road: "continue with the current profile" rebuilds the runtime in place, so the game does not have to be ported again and your saves are kept.
+- The external display needs the new runtime: the row in the drawer shows up after "update runtime" rebuilt the pack's host. Nothing else changes.
+- This release carries the upstream line's work: the engine's own fixes and three more games that play on Android.
+
+### New games
+
+- Xenoblade Chronicles: Definitive Edition (30 fps; it rarely crashes on boot - about 1 in 35 - and saving and the later maps are not tested yet)
+- Ultra Kaiju Monster Rancher
+- OCTOPATH TRAVELER 0 (Chinese release) - for the Simplified Chinese text, port with Game language: Chinese (Simplified)
+- Pokémon Sword and Pokémon Shield install under their own names now (org.nx2a.pokemonsword, org.nx2a.pokemonshield); the Wild Area and the battles are checked
+
+### New
+
+- The game goes to a wired display: plug an HDMI monitor into the phone's USB-C and the game fills the screen while the phone keeps the gamepad. The switch is in the drawer (Controls, Picture, External display), off by default.
+- The saves travel through the system file manager: exporting asks where the package goes, importing takes a zip from anywhere the file manager sees and unpacks it in the cache first, so a broken package never touches the save.
+- The in-game drawer fills the screen, and its tabs follow WinNative's: an icon above the label, a sliding bar under the chosen one, and a sideways scroll when the six tabs do not fit.
+- The gamepad center is new: a physical controller is a controller. See it, test its buttons, rebind a key, calibrate the dead zone and the trigger threshold, and choose whether the face buttons follow their position or their label. The settings belong to the controller, not to the game.
+- The gamepad center says which player a controller plays, and the rumble goes to the player it belongs to. The library page can be driven with a gamepad.
+- OCTOPATH TRAVELER 0 has a gamepad theme of its own.
+- The runtime update's dialog offers continue and retry only.
+
+### Fixed
+
+- The player's language choice stands for the Chinese releases: OCTOPATH TRAVELER 0 (Chinese release) and FINAL FANTASY RESONANCE (Asian release) no longer force Simplified Chinese on a Korean or Traditional Chinese player.
+- A pack made before a profile key that was added (and is off) still runs on the new host: no porting again.
+- The on-screen controls keep their spacing when they are grown, and stay on the screen.
+- A controller that goes away leaves nothing pressed, a key's scan code always reaches the host, and the host logs what every controller key became.
+
+### Engine (the upstream sync, 38 commits)
+
+- A batch of Vulkan and NVN fixes: the occlusion addresses, the descriptor readiness the GPU produces, the sampler limits that now match Android, the vertex attribute divisor, the defaults of a disabled vertex attribute, the descriptor cache keys, a pool remap that fails partway, the command segments the guest owns, and the games wound against the front-face rule (DM_VK_FRONT).
+- The pipeline cache is saved after a burst of new pipelines, and the pools the GPU never uses stay in cached memory where the hardware buffers can read them.
+
+### Community ports
+
+- **@rospec14** - Xenoblade Chronicles: Definitive Edition and Ultra Kaiju Monster Rancher, and Pokémon Shield's package name (through the upstream #386, #391, #384).
+- **@intermission88** - the fix that lets an older pack run on the new host (through the upstream #387).
+- **@DeathKhan, @hjcoggan, @lianghx123** - engine fixes from upstream (#263, #275, #350).
+- No pull request was merged into this repository itself; all of it came in with the upstream sync. Everyone in this release's history is named in the README's contributors table.
+
+## v0.3.0-alpha11 - 2026-11-14
+
+### Before you update
+
+- The player API moved to revision 4 (the motion switches, the audio output and the GPU clock), so a pack made with an older one is marked as needing a runtime update. "Update runtime" in the library rebuilds it in place: the game does not have to be ported again, and your saves are kept.
+- This release carries the upstream line's work: the engine's own fixes and nineteen more games that play on Android.
+
+### New games
+
+- The Legend of Zelda: Breath of the Wild (experimental, 60 fps with 1.9.0)
+- Pokémon Sword, Pokémon Shield, Pokémon Brilliant Diamond, Pokémon Scarlet
+- Fire Emblem Engage (60 fps with 2.0.0)
+- Super Mario 3D World + Bowser's Fury
+- The World Ends with You -Final Remix-
+- Pokémon Mystery Dungeon Rescue Team DX
+- Rhythm Heaven Groove
+- Kirby's Return to Dream Land Deluxe (it reads the console's fonts, so it needs the firmware)
+- Mega Man Battle Network Legacy Collection Vol. 1 and Vol. 2
+- Cardfight!! Vanguard Dear Days 2
+- Disco Elysium - The Final Cut
+- Tomodachi Life: Living the Dream
+- Untitled Goose Game
+- FM24 Touch, Football Manager 26 Touch
+
+### New
+
+- The drawer gives the audio a tab of its own: the output follows the system, or one of the devices the system has (a Bluetooth headset, a USB dongle).
+- The GPU's clock is a switch in the drawer: off, always at its highest, or only while the frames miss the display.
+- The motion switches move to the game's drawer, and the device's turn moves the game's six-axis sensor.
+- The build page takes the player's own font, the console's firmware and the multithreaded replay.
+- The library says what a game needs before the port: the API it draws with, whether it plays over the local network, and how far its profile got.
+- The firmware is one for the machine: import it from a zip, in the environment checklist, the settings, the guided setup or the build page. The chip says when the machine has none.
+- The gamepad's style is the player's pick: the bundled theme or the default pack, remembered per game and in effect at once.
+- The log bundle carries how the port ended (the exit code, or the signal that killed it) and the device's memory at that moment.
+
+### Fixed
+
+- The shader split spills its payloads to the disk: a phone's memory does not hold a game's shaders (FINAL FANTASY RESONANCE has 73,512 of them), so the package is written from the disk, one shader at a time. The split has a budget now, and stops with a clear error when the device has no room for it.
+- A change to the shader split no longer makes the port translate every shader again: the translation is reused, and the port takes 40 seconds instead of 40 minutes.
+- The frame generation no longer comes and goes: it holds itself back in one piece, its label follows the host's own state, and the optical flow works on half the picture.
+- The game's own decoder runs only for the games that need it: a dump of another version stops with a message that says which version the profile registers, instead of crashing.
+- A port the system killed (out of memory) leaves a log now, and the app says how the run ended.
+- The library page no longer asks for a driver: the app ships the Turnip driver and picks it by default.
+
+### Changed
+
+- **The app and the repository are GPL-3.0-or-later.** The tree used to be MIT, with the frame generation as the one GPL component in it. The MIT terms let anyone take the code and ship a closed app from it; the GPL terms require a derivative to be distributed under the same license, with its source and the notices kept. The license follows the code that was taken, not what the build linked: the frame generation can be left out of a build (`-PnxLsfg=false`), and the result is still GPL. The third-party components keep their own licenses, the upstream engine's copyright notice is kept, and the full license text travels with the app and the desktop bundle.
+- **The license files are laid out so that a machine reads them.** `LICENSE` is the GPL-3.0 text alone, so GitHub shows the repository as GPL-3.0 instead of "Other"; `NOTICE.md` says what those terms cover, who holds the copyright on what (the upstream engine and the upstream desktop tool are named, with their MIT text quoted), and which parts keep a license of their own. The app's own notice no longer says that selling it is not allowed: the GPL lets a distributor charge for a copy, so the notice says what the license actually says.
+
+### Community ports
+
+- No community pull request has been merged since the last version.
+- Everyone in this release's history is named in the README's contributors table.
+
+## v0.3.0-alpha10 - 2026-11-13
+
+### Before you update
+
+- Nothing to redo: the player API did not move, so the data packs of alpha09 keep working.
+
+### New
+
+- FINAL FANTASY RESONANCE (Asian release) plays on Android now: its own profile, its own host rows, its own gamepad theme. Unreal Engine 5.6.1, 73,512 shaders, all translated. The international release is untouched.
+- The older pack of the same game goes when the new one lands: its saves move into the new pack first, and two packs that both hold saves are left alone.
+- The cover is read again when it failed (the card showed a letter instead of the game's own picture until the app was restarted), and a pack that is only a manifest never wins the card.
+
+## v0.3.0-alpha09 - 2026-11-13
+
+### Before you update
+
+- The player API moved to revision 2 (the frame rate step), so a pack made with an older one is marked as needing a runtime update. "Update runtime" in the library rebuilds it in place: the game does not have to be ported again, and your saves are kept.
+
+### New
+
+- The shared runtime log is a bundle now: the device's and the app's own facts, the game's own facts (its name, title ID, version, profile status) and the host's logs of the last run and the one before it. The host renames its log at every start, so a crash's backtrace was in the log the share never took.
+- A frame rate step in the drawer: follow the game, 60, 40 or 30. The pick takes effect at once and is remembered per game. A game capped at 30 fps stays at 30.
+- The drawer has a performance page now - the first one, and the one it opens on: the frame rate step and the docked mode, each with a line saying when it helps.
+
+## v0.3.0-alpha08 - 2026-11-13
+
+### Before you update
+
+- Nothing to redo: the data packs of alpha07 keep working, and a game that
+  needs a new runtime is still updated on its own from the library.
+
+### New
+
+- "Share the log" packs a zip now: the device's and the app's own facts, the
+  app's log, the stage logs of every game in the work folder (the host's
+  build, the Oodle decoder's run, the extractor's, the shaders', the porter's
+  traceback) and the build history's logs. Each log says how much of it was
+  cut.
+- A game's updates and its DLC are found in a first-level subfolder next to
+  the base game, so the usual layout of a download now ports with its DLC.
+  Only the picked game's files are taken from there, and the report says
+  which subfolder each update and DLC came from.
+- The builds page says what it found and how long it runs: the target (which
+  game, which file, is it adapted), the files the porter found (the base
+  game, its updates and its DLC, each with its version and the subfolder it
+  came from) and the build options.
+
+## v0.3.0-alpha07 - 2026-11-13
+
+### Before you update
+
+- Your data packs do not have to be ported again. If a game's runtime is not the current one, the library says so, and "Update runtime" rebuilds it from the profile that made the pack. Your saves are kept.
+- This release carries the upstream line's work: the engine's own fixes and nine more games that play on Android.
+
+### New games
+
+- Animal Crossing: New Horizons (local play over the LAN)
+- DARK SOULS: REMASTERED
+- FINAL FANTASY RESONANCE
+- Kirby and the Forgotten Land
+- Lonely Mountains: Downhill
+- Octopath Traveler 0, and its Chinese release with a gamepad of its own
+- Picross S+
+- South Park: The Stick of Truth
+- The Legend of Zelda: Echoes of Wisdom
+
+### New
+
+- A data pack's runtime can be updated on its own. The app rebuilds it from the profile that made the pack, so a game whose runtime is out of date does not have to be ported again.
+- Local play over the LAN: the console's own local play, without the console.
+- Games that use OpenGL ES run on the device's own GL driver.
+- Unreal's shader archives are decoded on the device, with the game's own Oodle decoder.
+- The app's code is split into layers now, and follows the repository's own layout.
+- The builds page says what the selected game holds.
+
+### Fixed
+
+- The memory pools are redone: they are allocated outside the pool lock and the small ones live in slabs, so the frame time does not jump when a pool appears or goes.
+- The Vulkan pipeline caches are checked against a copy on the CPU before they are used, and they are saved atomically: a cache that went wrong is rebuilt instead of drawing the wrong thing.
+- A 32-bit game stops with a clear message instead of failing later.
+- The Unreal shader decode continues with the streams it has.
+- The pak's AES works without commoncrypto, and with pycryptodome's other name.
+- The top bar's chip is coloured by the child-process limit.
+- A save package that holds no file is refused.
+- The setup checks the battery setting.
+
+### Community ports
+
+- No community pull request has been merged since the last version.
+- Everyone in this release's history is named in the README's contributors table.
+
+## v0.3.0-alpha06 - 2026-11-11
+
+### Before you update
+
+- The data packs are untouched this time: the games you ported with alpha05
+  play as they are, no porting again.
+- The output folder setting is gone: the data pack lives in the app's own
+  folder. A pack made on a computer does not play on the phone any more - the
+  game is ported on the phone (the shaders are reused, so it is quick).
+
+### New
+
+- The data pack can live on a removable card: one button in the library moves
+  it (with a progress bar), and a rebuild writes the new pack on the card as
+  well. Pulling the card during a move leaves the pack where it was; a
+  deletion with the card out says that the pack on the card was not deleted.
+  Verified on a device (a Xiaomi tablet and a memory card).
+- The library clears the build cache and deletes a game: a failed port no
+  longer leaves files behind that nothing could get rid of. A deletion takes
+  the data pack (and the saves in it) with it, and your own game files stay.
+  Both ask first, and the confirmation says what the action does.
+- The settings page is a page of sections: an icon in the top bar opens it,
+  five sections on the left, one row per setting. The settings themselves did
+  not change; the language moved into About.
+- The update dialog spreads over the available width on a small screen.
+
+### Fixed
+
+- Picking a Lossless.dll from anywhere failed to copy: only the path that
+  finds it on its own made the folder, and the failure was reported as "this
+  does not look like a Lossless.dll". The folder is made now, and a copy that
+  does not work is logged.
+- The frame generation row has one button: the private copy refreshes itself,
+  so the button that refreshed it by hand only repeated what the app did.
+
+### Community ports
+
+- **@15622162922** — #10: fix(android): compile adrenotools C hooks with clang
+  The Vulkan driver loader's hooks keep their names now: they were built as
+  C++, so the names came out mangled and the loader could not find them.
+
+## v0.3.0-alpha05 - 2026-11-11
+
+### Before you update
+
+- Data packs made with an older version do not work any more. Port your games
+  again - the library marks them, and the button says "port again".
+  - The shaders are not translated again: the ones that did not change are
+    reused. Only the host's glue layer is rebuilt, so it is much faster than
+    the first port.
+  - Your game progress and your exported save backups are kept.
+  - The game's files have to be in the same folder as before.
+
+### New
+
+- Faster ports. The data pack is written to the app's own folder instead of
+  shared storage: ~200-230 MB/s instead of ~50-100 MB/s. Three Tears of the
+  Kingdom ports died at that copy step before.
+- Performance overlay over the game: FPS, frame time, CPU, GPU, memory, battery
+  temperature, power. You choose which fields show.
+- New in-game menu. It opens from the left edge with the gamepad's menu button
+  or the back gesture. Pause / resume / exit are in it.
+- The library shows the game's own name and version, not the file name.
+- "Extra address space" on the build page. It fixes "AllocateAddressRegion
+  refused (0x1803)" in some games.
+- The environment's state is on the top bar of every page. Tap it to see what
+  is missing.
+- The on-screen gamepad is drawn by the app now. The layout editor is new, and
+  the d-pad lights up the direction you press.
+- The update check opens a popup with the new version, the version you run, and
+  the release's own notes.
+
+### Fixed
+
+- The app update replaces the tool tree instead of writing over it. An update
+  that left the old files behind built two hosts at once, and every port
+  failed.
+- The update check runs on its own: an error there no longer closes the app.
+- The frame generation no longer slows frame-locked games down. Measured on a
+  Y700 (120 Hz): 60 -> 120 fps.
+- The frame generation can be turned off from the in-game menu. The switch only
+  turned it on before.
+- Without Lossless.dll the switch says it is not available, instead of looking
+  like an ordinary off switch.
+- Typing in a game no longer freezes and then crashes it.
+- A crash writes a log now instead of dying without one.
+- The hidden on-screen gamepad no longer blocks touches on the game.
+- After a game closed, the library no longer flashed "back to game / exit game".
+
+## v0.3.0-alpha04 - 2026-11-10
+
+### Added
+
+- **The app's data pack is built in the app's own folder** (`files/ports`), not on the shared storage. The extracted game files were copied over FUSE, which is slow (50-100 MB/s) and fragile; the copy now runs at the device's write speed (200-230 MB/s measured) and no media scanner shares the files. The log of 2026-11-09 shows three ports of Tears of the Kingdom dying in that stage: the system killed the app, a half-made pack left behind made the next port fail, and a cancel interrupted a read. The game reads its files from there as well.
+- **The free-and-open-source notice.** It is shown once, when the setup finishes, and on the first start of an app that had already done the setup. It says the app is free and open source, that selling it is not allowed, and that a player who paid for it can ask the seller for a refund. "View the repo" opens the fork's page on GitHub.
+- **Tapping the version in the Settings opens the repository on GitHub.** The underline says the row can be tapped; a device without a browser has no other way there, so the app stays quiet.
+- **An experimental port says so.** The data pack's manifest carries the profile's own status: a game that was never brought up on Android is written with the status experimental, and the library shows it as one - the player is told the port may stop at a path that was never walked.
+- **A developer setup guide** (`docs/GETTING_STARTED.md`).
+
+### Fixed
+
+- **A game's text entry froze the game and then killed it.** The host told the app "the drawer steps aside" with a JNI call made on the game's own thread, and that call blocked there: the log showed the entry opening and nothing after it, and the process died of SIGSEGV with no backtrace and no tombstone. The notice goes on a thread of its own now - the game's thread must never wait for the app.
+- **A crash on Android was silent.** The crash handlers were only installed by the desktop host, so a SIGSEGV killed the game silently: the kernel had nowhere to run a handler, the process died of the signal and the log stayed empty. They are installed now, and every thread that can fault gets the signal alternate stack.
+- **The log said the wrong reason.** The line read "audio suspended (background / interruption)" every time the game was held, but the game is held for three reasons: the app is in the background, the pause menu is open, or a text entry is open. A game's name entry froze with the keyboard never coming up, and the log blamed the background. The host names the reason now.
+- **The app checks the all-files permission before a port starts.** Without it the game file cannot be read, and the port died in the middle of a Python stack trace.
+- **The cleanup of a half-made pack is tolerant now.** The folder may be gone already (another process removed it), and a directory that vanishes while it is being removed must not stop the port - that was the FileNotFoundError that ended with exit 139.
+
+## v0.3.0-alpha03 - 2026-11-10
+
+### Added
+
+- **The Oodle shader archives are decoded on the phone itself.** The two Pokémon Legends games keep their shaders in Oodle-compressed archives, which have to be unpacked with the game's own decoder. That decoder is an ARM64 program, and the phone is the ARM64 machine it runs on - so the app decodes them there, with no adb and no second device in the loop. Where the port runs, the decoding follows it: a computer with adb decodes on the connected device, the phone app decodes on itself, and a computer with neither says so instead of failing later.
+
+### Changed
+
+- **The README was rewritten**, in English and Chinese: the phone app first, what changed on this branch, and the games that play on Android.
+
+## v0.3.0-alpha02 - 2026-11-10
+
+### Added
+
+- **The versions say what they are.** The tags carry the whole upstream base and this line's own stage on it: `v0.3.0-alpha02` is the base 0.3.0's second alpha, and `v0.3.0` is its released version. The app says the same version, so its update check can tell which release is newer than the build that is running.
+
+### Fixed
+
+- **The port's space check counts the right files.** It measured every archive in the folder, so a folder holding more than one game was sized as if all of it were going to be built, and a port that would have fitted was refused. It counts the picked game's files now: its base, its updates, its DLC.
+
+## v0.3-android - 2026-11-09
+
+The first release of this line. The phone app is the whole tool: it ports a game on the device itself and plays the data pack it makes.
+
+### Added
+
+- **Ports on the device.** The app carries the whole pipeline (the Linux rootfs, the build tools, the .NET runtime) and turns a game's own files into a data pack on the phone, then plays it.
+- **The game is a page of the app.** Starting a game no longer opens a second task: the game sits on top of the library page, so "exit the game" falls back to the library.
+- **The setup's keys are the ones a port uses.** One path: what the guided setup asks for is what the port starts with.
+- **The app speaks the player's language.** Chinese or English, switchable in the settings and effective at once.
+- **Saves can be shared.** A save can be packed and sent to someone else, and a package from elsewhere imported - with the old save kept as a backup.
+- **Vulkan drivers.** The app ships one driver, downloads more, imports the player's own, and the game picks the one it runs with.
+- **The in-game drawer.** The menu button opens it: frame generation and display & controls in the pause menu.
+- **The update check on start.** The release page is checked quietly; a newer version says so on the home page, and the Settings tab can check again on demand.
