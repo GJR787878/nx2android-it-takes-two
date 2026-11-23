@@ -110,6 +110,18 @@ bash packaging/android-apk/build_apk.sh release
 `packaging/android-apk/build_toolchain.py` 使用的 Python wheel。alpha13 APK 用
 `versionCode 32` 和 debug 签名密钥构建。
 
+## CI 构建
+
+本 fork 用 GitHub Actions 出 APK。打开 **Actions → Android app → Run workflow**；
+`workflow_dispatch` 运行会产 `nx2android-android-apk`（APK）和 `nx2a-game-profiles`。
+运行 [`45254511512`](https://github.com/GJR787878/nx2android-it-takes-two2/actions/runs/45254511512)
+在 7 分 26 秒内成功，产物 259,504,559 字节，SHA-256 为
+`587f4d1d693a86fc53bfd48ac157c0579c8a10bada54db2da0991ca588a66396`。
+
+它和 alpha13 使用同一张 debug 证书，因此可以覆盖安装 alpha13。keystore 存放在仓库
+Secrets（`NX2A_KEYSTORE_B64` 及密码/别名/密钥密码），不提交进 Git。工作流只出 APK，
+不跑单元测试；测试在本快照上仍不是全绿。
+
 ## 致谢与权利
 
 移植基于 [nx2androidX](https://github.com/GJR787878/nx2androidX) 及其上游工作。
