@@ -35,8 +35,18 @@ The APK is in **Releases**, not in the Git tree, because it is over GitHub's 100
 - `docs/apk-sha256-v13.txt`, `docs/profiles-r2-it2.sha256` — checksums.
 
 The complete source is under the repository root; `nxnative/dm/games` keeps only
-`010092A0172E4000` and its README to keep the snapshot small. The upstream profile tables are
-not duplicated here. The original upstream README is kept as `docs/README-upstream.md`.
+`010092A0172E4000` to keep the snapshot small. The upstream profile tables are not duplicated here.
+The original upstream README is kept as `docs/README-upstream.md`.
+
+## Downloads
+
+All large files are attached to the [alpha13 release](https://github.com/GJR787878/nx2android-it-takes-two/releases/tag/v0.4.1-alpha13):
+
+- [alpha13 APK](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/nx2android-v0.4.1-alpha13-it2-srgb.apk)
+- [profiles r2](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/nx2a-profiles-r2-it2.zip)
+- [30 fps log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-30fps-alpha11-log.zip)
+- [60 fps alpha12 log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha12-log.zip)
+- [60 fps alpha13 log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha13-srgb-log.zip)
 
 ## Logs and measured behaviour
 
