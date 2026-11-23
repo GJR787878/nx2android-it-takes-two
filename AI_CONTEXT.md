@@ -85,8 +85,20 @@ Relevant code: `nxnative/dm/android/gfx_vk_present.c` (`present_one`, `present_w
 This fork's `.github/workflows/android-apk.yml` is a working build, not a placeholder. A
 `workflow_dispatch` run builds the payload and the APK and uploads `nx2android-android-apk`;
 a `v*` tag attaches the APK and profiles package to the matching Release. Run
-`45254511512` succeeded in 7m26s and produced a 259,504,559-byte APK with SHA-256
-`587f4d1d693a86fc53bfd48ac157c0579c8a10bada54db2da0991ca588a66396`.
+`45283177475` succeeded in 5m17s and produced a 259,504,747-byte APK with SHA-256
+`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`.
+
+### Clean-port fix
+
+The first CI APK built fine, but a fresh It Takes Two port stopped with `FileNotFoundError` on
+`dm/games/010092A0172E4000/shader_map.tsv`: `split_shaders()` read the profile's shader tables
+even though the repository profile has only `game.tsv` and `android.tsv`. Commit `70f4e38`
+makes a table-less profile copy the split's `shader_map.tsv`, `shader_facts.tsv` and
+`shader_pairs.tsv` as its first port's, and disables package reuse until those tables exist.
+The shader split succeeds (32,118 shaders: 2,171 compute, 81 geometry, 24,779 pixel, 5,087
+vertex). The fix is in the r2 APK (`ci-20261124-alpha13-r2`) but has not been re-tested on a
+device. The tables are written into the per-port `dm/games` copy and removed by
+`drop_profile`, so every clean port still splits again.
 
 The workflow does **not** run the tests: `python -m unittest discover tests` is still not green
 on this tree. Known source-level blockers include:

@@ -107,9 +107,11 @@ GitHub 工作流是 `.github/workflows/android-apk.yml`：
 - 需要用 `NX2A_KEYSTORE_B64`（以及匹配的密码/别名 secrets）才能用项目密钥签名。没有时，
   Gradle 使用 runner 的临时 debug key。
 
-API/dispatch 构建已成功：运行 `45254511512` 在 7 分 26 秒内产出 APK。**测试套件**在本
-快照上仍不是全绿；已知源码级阻塞项在 `CHANGES.md` / `CHANGES.zh.md`，缺失的测试输入
-（profiles、docs images）见上。构建工作流不跑测试，所以 APK 绿不等于测试绿。
+API/dispatch 构建已成功：运行 `45283177475` 在 5 分 17 秒内产出 APK。该运行包含 `70f4e38`
+的 clean-port 修复：只有 `game.tsv` 和 `android.tsv` 的档案，直接采用 shader split 生成的
+三张表，不再读取不存在的档案表。**测试套件**在本快照上仍不是全绿；已知源码级阻塞项在
+`CHANGES.md` / `CHANGES.zh.md`，缺失的测试输入（profiles、docs images）见上。构建工作流不跑
+测试，所以 APK 绿不等于测试绿。
 
 ## 给 AI 工具的阅读规则
 

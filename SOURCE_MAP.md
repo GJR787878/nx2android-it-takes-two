@@ -112,8 +112,10 @@ The GitHub workflow is `.github/workflows/android-apk.yml`:
 - it needs `NX2A_KEYSTORE_B64` (and the matching password/alias secrets) to sign with the
   project key. Without it, Gradle uses the runner's throwaway debug key.
 
-The API/dispatch build succeeds: run `45254511512` produced the APK in 7m26s. The **test
-suite** is still not green in this snapshot; the known source-level blockers are in
+The API/dispatch build succeeds: run `45283177475` produced the APK in 5m17s. Run
+`45283177475` includes the clean-port fix in `70f4e38`: a profile with only `game.tsv` and
+`android.tsv` takes the shader split's three tables instead of reading missing profile tables.
+The **test suite** is still not green in this snapshot; the known source-level blockers are in
 `CHANGES.md`, and the missing test inputs (profiles, docs images) are above. The build workflow
 does not run the tests, so a green APK is not a green test suite.
 

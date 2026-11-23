@@ -81,9 +81,20 @@ alpha13 日志是 `logs/IT2-60fps-alpha13-srgb-log.zip` 里的 417 秒运行：
 
 本 fork 的 `.github/workflows/android-apk.yml` 是能出包的工作流，不是占位文件：
 `workflow_dispatch` 会构建 payload 和 APK，上传 `nx2android-android-apk`；`v*` tag 会把
-APK 和 profiles 包挂到对应 Release。运行 `45254511512` 在 7 分 26 秒内成功，产物
-259,504,559 字节，SHA-256 为
-`587f4d1d693a86fc53bfd48ac157c0579c8a10bada54db2da0991ca588a66396`。
+APK 和 profiles 包挂到对应 Release。运行 `45283177475` 在 5 分 17 秒内成功，产物
+259,504,747 字节，SHA-256 为
+`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`。
+
+### clean-port 修复
+
+第一版 CI APK 能正常构建，但全新移植《双人成行》时在 `split_shaders()` 读取
+`dm/games/010092A0172E4000/shader_map.tsv` 处报 `FileNotFoundError`：仓库档案只有
+`game.tsv` 和 `android.tsv`，代码却仍去读档案的 shader 表。提交 `70f4e38` 让缺表档案把本次
+split 生成的 `shader_map.tsv`、`shader_facts.tsv`、`shader_pairs.tsv` 当作首次移植的表，
+并在表补齐前禁用包复用。shader split 本身成功：32,118 个 shader（compute 2,171、
+geometry 81、pixel 24,779、vertex 5,087）。修复已进入 r2 APK
+（`ci-20261124-alpha13-r2`），但还没有真机重新移植验证。表只写进本次端口的 `dm/games`
+副本，`drop_profile` 会删除，所以每次 clean port 仍会重新 split。
 
 工作流 **不跑测试**：`python -m unittest discover tests` 在本树上仍不是全绿。已知源码级
 阻塞项：
