@@ -1,5 +1,7 @@
 # Source map and deliberate omissions
 
+**English** | [中文](SOURCE_MAP.zh.md)
+
 This repository is a **release snapshot**, not the full upstream checkout. The source is
 complete for the It Takes Two changes, but some large trees and the upstream Git history are
 deliberately absent. Read this before saying that a path is “missing” or that a test should pass.

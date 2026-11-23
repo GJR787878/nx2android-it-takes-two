@@ -1,5 +1,7 @@
 # It Takes Two — Android port (nx2androidX)
 
+**English** | [中文](README.zh.md)
+
 It Takes Two (Switch, `010092A0172E4000`, v131072 / 1.0.2) brought up on Android with
 [nx2androidX](https://github.com/GJR787878/nx2androidX). This repository holds the verified
 alpha13 build, the 30 fps and 60 fps logs, the source snapshot of the changes, and the profile
@@ -16,6 +18,9 @@ tree or the test status:
 - [`CHANGES.md`](CHANGES.md) — the 13 modified files and the two added asset trees.
 - [`SOURCE_MAP.md`](SOURCE_MAP.md) — why the 184 upstream profiles and `docs/images` are absent.
 - [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch) — the exact tracked-file diff.
+
+Chinese versions: [`AI_CONTEXT.zh.md`](AI_CONTEXT.zh.md), [`CHANGES.zh.md`](CHANGES.zh.md),
+[`SOURCE_MAP.zh.md`](SOURCE_MAP.zh.md).
 
 ## Latest build
 
@@ -48,7 +53,7 @@ The APK is in **Releases**, not in the Git tree, because it is over GitHub's 100
 The complete source is under the repository root; `nxnative/dm/games` keeps only
 `010092A0172E4000` plus the upstream profile README to keep the snapshot small. The upstream
 profile tables are not duplicated here. The original upstream README is kept as
-`docs/README-upstream.md`.
+`docs/README-upstream.md` and `docs/README-upstream.zh.md`.
 
 ## Downloads
 

@@ -1,10 +1,12 @@
 # Patch inventory
 
+**English** | [中文](README.zh.md)
+
 `it2-alpha13.patch` contains the textual diff of the 13 tracked files modified in this snapshot
 relative to the local working-tree base `ba205aa`. It was produced with:
 
 ```bash
-git -C /home/user/nx2androidX diff --no-color -- . > patches/it2-alpha13.patch
+git -C <nx2androidX working tree> diff --no-color -- . > patches/it2-alpha13.patch
 ```
 
 It does **not** include the untracked asset files:

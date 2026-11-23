@@ -1,5 +1,7 @@
 # AI context — read this before judging the tree
 
+**English** | [中文](AI_CONTEXT.zh.md)
+
 This repository is a **release snapshot**, not a full development history. It contains the
 It Takes Two Android port built on [nx2androidX](https://github.com/GJR787878/nx2androidX),
 the verified alpha13 APK, the 30/60 fps logs, the source changes and the profile package.

@@ -1,5 +1,7 @@
 # Changes in this snapshot
 
+**English** | [中文](CHANGES.zh.md)
+
 This is a change inventory, not a Git history. The exact textual diff for the tracked files is
 in [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch). The patch is taken against the local
 working-tree base `ba205aa`; the port's upstream-side commits are listed in `AI_CONTEXT.md`.
