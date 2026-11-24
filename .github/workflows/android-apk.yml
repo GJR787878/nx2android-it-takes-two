@@ -1,6 +1,6 @@
 # Builds the phone app (the APK) on GitHub: the payload (the rootfs the phone runs the tools with), the build
-# tools, the app's assets and the APK itself (packaging/android-apk/build_apk.sh). This fork is the CI-buildable
-# copy of GJR787878/nx2android-it-takes-two.
+# tools, the app's assets and the APK itself (packaging/android-apk/build_apk.sh). This is the CI build of
+# GJR787878/nx2android-it-takes-two; it2-r2 also carries the clean-port fix for It Takes Two.
 #
 # workflow_dispatch builds the branch and keeps the APK as the run's artifact. A v* tag additionally attaches the
 # APK to the release with that tag, when the release already exists.

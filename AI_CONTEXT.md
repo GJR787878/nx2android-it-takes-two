@@ -96,9 +96,10 @@ even though the repository profile has only `game.tsv` and `android.tsv`. Commit
 makes a table-less profile copy the split's `shader_map.tsv`, `shader_facts.tsv` and
 `shader_pairs.tsv` as its first port's, and disables package reuse until those tables exist.
 The shader split succeeds (32,118 shaders: 2,171 compute, 81 geometry, 24,779 pixel, 5,087
-vertex). The fix is in the r2 APK (`ci-20261124-alpha13-r2`) but has not been re-tested on a
-device. The tables are written into the per-port `dm/games` copy and removed by
-`drop_profile`, so every clean port still splits again.
+vertex). The fix is in the r2 APK (`ci-20261124-alpha13-r2`). A device run then completed all
+nine stages with exit code 0 at `2026-11-24 07:53:06` (OPPO OPD2409, Android 17, 60 fps); its
+text log is under `logs/it2-alpha13-r2-20261124-080056/`. The tables are written into the
+per-port `dm/games` copy and removed by `drop_profile`, so every clean port still splits again.
 
 The workflow does **not** run the tests: `python -m unittest discover tests` is still not green
 on this tree. Known source-level blockers include:

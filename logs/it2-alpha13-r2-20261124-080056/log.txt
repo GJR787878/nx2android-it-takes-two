@@ -1,0 +1,14 @@
+aoc: installed the full-game entitlement (5001) -> /data/user/0/com.gjr.nx2androidx/files/ports/ItTakesTwo-data/aoc/1
+60 fps: installed fpslock.tsv for main build C4067E8CB3258656 -> /data/user/0/com.gjr.nx2androidx/files/ports/ItTakesTwo-data/fpslock.tsv
+env: DM_AOC_DIR=/data/user/0/com.gjr.nx2androidx/files/ports/ItTakesTwo-data/aoc, DM_FPS_TARGET=60, DM_FPS_LOCKS=/data/user/0/com.gjr.nx2androidx/files/ports/ItTakesTwo-data/fpslock.tsv, DM_PRESENT_INTERVAL=display
+cheats: the drawer opened
+drawer: the tab -> CONTROLS
+cheats: the drawer opened
+drawer: the tab -> AUDIO
+drawer: the tab -> CONTROLS
+cheats: the drawer opened
+env: DM_AOC_DIR=/data/user/0/com.gjr.nx2androidx/files/ports/ItTakesTwo-data/aoc, DM_FPS_TARGET=60, DM_FPS_LOCKS=/data/user/0/com.gjr.nx2androidx/files/ports/ItTakesTwo-data/fpslock.tsv, DM_PRESENT_INTERVAL=display
+cheats: the drawer opened
+drawer: the tab -> CONTROLS
+drawer: the tab -> PLAYERS
+cheats: the drawer opened

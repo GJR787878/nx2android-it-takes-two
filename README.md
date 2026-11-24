@@ -142,7 +142,12 @@ only `game.tsv` and `android.tsv`; an old port worked because its working direct
 held tables from an earlier split. Commit `70f4e38` makes a table-less profile take the split's
 three tables as its first port's instead of reading missing files. The shader split itself
 succeeds (32,118 shaders: 2,171 compute, 81 geometry, 24,779 pixel, 5,087 vertex). The fix is in
-the r2 APK above; it has not yet been re-tested on a device.
+the r2 APK above.
+
+The first successful device build with this fix is in
+[`logs/it2-alpha13-r2-20261124-080056/`](logs/it2-alpha13-r2-20261124-080056/README.md): port
+exit code 0 at `2026-11-24 07:53:06`, all nine stages, output
+`ItTakesTwo-data`. The full 15-file ZIP is attached to the `ci-20261124-alpha13-r2` release.
 
 ## Credits and rights
 

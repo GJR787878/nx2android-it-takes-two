@@ -135,7 +135,12 @@ Secrets（`NX2A_KEYSTORE_B64` 及密码/别名/密钥密码），不提交进 Gi
 `game.tsv` 和 `android.tsv`；旧端口能跑，是因为旧端口工作目录里已有上一次 split 生成的表。
 提交 `70f4e38` 让缺表档案直接把本次 split 的三张表当作首次移植的表，不再读不存在的文件。
 shader split 本身成功：32,118 个 shader（compute 2,171、geometry 81、pixel 24,779、
-vertex 5,087）。修复已进入上面的 r2 APK，但还没有在真机上重新移植验证。
+vertex 5,087）。修复已进入上面的 r2 APK。
+
+第一次带修复的真机构建日志在
+[`logs/it2-alpha13-r2-20261124-080056/`](logs/it2-alpha13-r2-20261124-080056/README.md)：
+端口退出码 0，结束时间 `2026-11-24 07:53:06`，九个阶段全部完成，产物
+`ItTakesTwo-data`。完整 15 文件 ZIP 挂在 `ci-20261124-alpha13-r2` Release。
 
 ## 致谢与权利
 

@@ -93,7 +93,9 @@ APK 和 profiles 包挂到对应 Release。运行 `45283177475` 在 5 分 17 秒
 split 生成的 `shader_map.tsv`、`shader_facts.tsv`、`shader_pairs.tsv` 当作首次移植的表，
 并在表补齐前禁用包复用。shader split 本身成功：32,118 个 shader（compute 2,171、
 geometry 81、pixel 24,779、vertex 5,087）。修复已进入 r2 APK
-（`ci-20261124-alpha13-r2`），但还没有真机重新移植验证。表只写进本次端口的 `dm/games`
+（`ci-20261124-alpha13-r2`）。真机随后完整跑完九个阶段，退出码 0，结束时间
+`2026-11-24 07:53:06`（OPPO OPD2409、Android 17、60 fps），文本日志在
+`logs/it2-alpha13-r2-20261124-080056/`。表只写进本次端口的 `dm/games`
 副本，`drop_profile` 会删除，所以每次 clean port 仍会重新 split。
 
 工作流 **不跑测试**：`python -m unittest discover tests` 在本树上仍不是全绿。已知源码级
