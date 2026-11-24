@@ -48,6 +48,7 @@ DM_GL_ACTIVE	str		debug	?	gfx_vk_shader.c
 DM_GL_CAPTURE	str		debug,ios	?	hle_gl.m	
 DM_GL_LOG	str		debug,ios	?	hle_gl.m	
 DM_GL_STUBS	str		debug,ios	?	hle_gl.m	
+DM_GPU_LOG	str	0	profile	?	perf_android.c	log the GPU load and clock every 30 presents: 0 = no, 1 = yes (tries the KGSL, devfreq and debugfs nodes once)
 DM_GPU_TURBO	str		profile	live	perf_android.c	"auto" or 1: ask the GPU for its high clocks while the game is GPU-bound; unset or 0 = no
 DM_GUEST_SPAWN_TEST	int		debug	?	hle_guestthread.c	
 DM_HLECOUNT	str		debug	start	hle_count.c	count every HLE call and write a TSV (category, name, count) at exit; the `ctl.txt` line `hlecount <file>` writes the counts so far, so two dumps around one action show the calls it made

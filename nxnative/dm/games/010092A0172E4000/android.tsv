@@ -9,7 +9,8 @@ package	org.nx2a.t010092a0172e4000
 orientation	landscape
 requires	bcn
 graphics	nvn
-# The two hot host threads on the Snapdragon 8 Elite prime cores (CPU 6/7), the other cores left to the
-# workers. This is a profile default; the app also writes the same rows for an already-installed pack.
+# Only the recorder on the prime cores: pinning the main thread there too made camera turns hitch. The main thread and the workers stay with the scheduler.
+# DM_GPU_LOG writes the GPU load/clock every 30 presents (the report's gpu_load/gpu_frequency are empty on this phone).
 env	DM_PIN_RECORD=prime
-env	DM_PIN_MAIN=prime
+env	DM_PIN_MAIN=0
+env	DM_GPU_LOG=1

@@ -202,6 +202,92 @@ void dm_perf_replay_thread(void) { pin_thread(&g_pin_replay, "DM_PIN_REPLAY", "r
 void dm_perf_record_thread(void) { pin_thread(&g_pin_record, "DM_PIN_RECORD", "vk record thread"); }
 void dm_perf_main_thread(void) { pin_thread(&g_pin_main, "DM_PIN_MAIN", "game main thread"); }
 
+// DM_GPU_LOG=1: what the GPU is doing beside its frame time (dm_perf_frame, every 30 presents). The report this phone gives has gpu_load=-1 and
+// gpu_frequency=0, so the KGSL nodes are tried first, then devfreq, then debugfs; the first readable node is kept. The clock is in MHz, the load in percent.
+typedef struct { int tried, busy_kind, clk_kind, dead; char busy_path[160], clk_path[160]; } gpu_log_state;
+static gpu_log_state g_gpu;
+static int gpu_read_long(const char *p, long *v) {
+    FILE *f = fopen(p, "r"); if (!f) return 0;
+    int ok = fscanf(f, "%ld", v) == 1; fclose(f); return ok;
+}
+static int gpu_read_two(const char *p, long *a, long *b) {
+    FILE *f = fopen(p, "r"); if (!f) return 0;
+    int ok = fscanf(f, "%ld %ld", a, b) == 2; fclose(f); return ok;
+}
+static void gpu_probe(void) {
+    if (g_gpu.tried) return; g_gpu.tried = 1;
+    static const char *busy_paths[] = {
+        "/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage",
+        "/sys/class/kgsl/kgsl-3d0/gpubusy",
+        "/sys/class/kgsl/kgsl-3d0/gpu_load",
+        "/sys/class/kgsl/kgsl-3d0/devfreq/gpu_load",
+        "/sys/class/kgsl/kgsl-3d0/devfreq/load",
+        "/sys/kernel/debug/kgsl/kgsl-3d0/gpu_busy_percentage",
+        "/sys/kernel/debug/kgsl/kgsl-3d0/gpubusy",
+        "/d/kgsl/kgsl-3d0/gpu_busy_percentage",
+        "/sys/kernel/gpu/gpu_busy",
+    };
+    for (size_t i = 0; i < sizeof busy_paths / sizeof *busy_paths; i++) {
+        long v = 0; const char *p = busy_paths[i];
+        if (gpu_read_long(p, &v)) {
+            if (v >= 0) {
+                g_gpu.busy_kind = strstr(p, "gpubusy") ? 2 : 1;
+                snprintf(g_gpu.busy_path, sizeof g_gpu.busy_path, "%s", p);
+                LOG("[perf] gpu %s: %ld%s", p, v, g_gpu.busy_kind == 2 ? " (busy total)" : "%");
+                break;
+            }
+            LOG("[perf] gpu %s: %ld (not a load)", p, v);
+        } else LOG("[perf] gpu %s: unreadable", p);
+    }
+    static const char *clk_paths[] = {
+        "/sys/class/kgsl/kgsl-3d0/gpuclk",
+        "/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq",
+        "/sys/kernel/debug/kgsl/kgsl-3d0/gpuclk",
+        "/d/kgsl/kgsl-3d0/gpuclk",
+        "/sys/kernel/gpu/gpu_clock",
+        "/sys/class/devfreq/5000000.qcom,kgsl-3d0/cur_freq",
+    };
+    for (size_t i = 0; i < sizeof clk_paths / sizeof *clk_paths; i++) {
+        long v = 0; const char *p = clk_paths[i];
+        if (gpu_read_long(p, &v) && v > 0) {
+            g_gpu.clk_kind = 1; snprintf(g_gpu.clk_path, sizeof g_gpu.clk_path, "%s", p);
+            LOG("[perf] gpu %s: %ld Hz (%ld MHz)", p, v, v / 1000); break;
+        }
+        LOG("[perf] gpu %s: unreadable", p);
+    }
+    if (!g_gpu.clk_kind) {   // the devfreq directory is named after the SoC on some kernels
+        DIR *d = opendir("/sys/class/devfreq"); struct dirent *e;
+        while (d && (e = readdir(d))) {
+            if (!strstr(e->d_name, "kgsl") && !strstr(e->d_name, "gpu")) continue;
+            char p[256]; snprintf(p, sizeof p, "/sys/class/devfreq/%s/cur_freq", e->d_name);
+            long v = 0;
+            if (gpu_read_long(p, &v) && v > 0) {
+                g_gpu.clk_kind = 1; snprintf(g_gpu.clk_path, sizeof g_gpu.clk_path, "%s", p);
+                LOG("[perf] gpu %s: %ld Hz (%ld MHz)", p, v, v / 1000); break;
+            }
+        }
+        if (d) closedir(d);
+    }
+    char b[256]; FILE *f = fopen("/sys/class/kgsl/kgsl-3d0/gpu_available_frequencies", "r");
+    if (f) { if (fgets(b, sizeof b, f)) { b[strcspn(b, "\n")] = 0; LOG("[perf] gpu frequencies: %s", b); } fclose(f); }
+    long max = 0; if (gpu_read_long("/sys/class/kgsl/kgsl-3d0/max_gpuclk", &max) && max > 0) LOG("[perf] gpu max clock: %ld MHz", max / 1000);
+    if (!g_gpu.busy_kind && !g_gpu.clk_kind) { g_gpu.dead = 1; LOG("[perf] gpu: no readable load or clock node"); }
+}
+static void gpu_log_sample(void) {
+    const char *e = getenv("DM_GPU_LOG"); if (!e || !*e || !strcmp(e, "0")) return;
+    gpu_probe(); if (g_gpu.dead) return;
+    long busy = -1, clk = 0;
+    if (g_gpu.busy_kind == 1) { if (!gpu_read_long(g_gpu.busy_path, &busy)) busy = -1; }
+    else if (g_gpu.busy_kind == 2) {
+        long a = 0, b = 0;
+        if (gpu_read_two(g_gpu.busy_path, &a, &b) && b > 0) busy = a * 100 / b;
+    }
+    if (g_gpu.clk_kind == 1) gpu_read_long(g_gpu.clk_path, &clk);
+    if (busy >= 0 && clk > 0) LOG("[perf] gpu busy %ld%% clock %ld MHz", busy, clk / 1000);
+    else if (clk > 0) LOG("[perf] gpu clock %ld MHz (load unreadable)", clk / 1000);
+    else if (busy >= 0) LOG("[perf] gpu busy %ld%% (clock unreadable)", busy);
+}
+
 static int64_t g_work_start;
 // ---- adaptive frame rate: when the frames do not fit the period the game asks for, presentation steps to a longer one the display divides evenly
 // (60 → 40 → 30 fps; 40 asks the display for 120 Hz), and back when they fit the shorter one with room; a steady rate instead of alternating
@@ -373,6 +459,7 @@ void dm_perf_frame(double period) {
     if (g_game_period && (int64_t)g_game_period < p) p = (int64_t)g_game_period;
     hint_init(p);
     { static unsigned n; if (++n % 60 == 0) gpu_turbo(); }
+    { static unsigned n; if (++n % 30 == 0) gpu_log_sample(); }
     if (g_work_start) {   // (a longer span: the game was held, by the pause menu or the background)
         int64_t w = g_prev_present ? t - g_prev_present - g_pace : t - g_work_start;
         int64_t pq = g_prev_present ? g_pq : 0, pace = dm_perf_pq_pace(pq);   // (t - g_work_start starts after the wait already)
