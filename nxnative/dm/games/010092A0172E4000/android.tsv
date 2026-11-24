@@ -9,8 +9,8 @@ package	org.nx2a.t010092a0172e4000
 orientation	landscape
 requires	bcn
 graphics	nvn
-# Only the recorder on the prime cores: pinning the main thread there too made camera turns hitch. The main thread and the workers stay with the scheduler.
-# DM_GPU_LOG writes the GPU load/clock every 30 presents (the report's gpu_load/gpu_frequency are empty on this phone).
-env	DM_PIN_RECORD=prime
+# Diagnostic A/B for the fixed-speed camera turn: no CPU pinning at all, so the scheduler places both hot threads as it did before the pin builds.
+# DM_GPU_LOG still writes the GPU load/clock every 30 presents (the report's gpu_load/gpu_frequency are empty on this phone).
+env	DM_PIN_RECORD=0
 env	DM_PIN_MAIN=0
 env	DM_GPU_LOG=1

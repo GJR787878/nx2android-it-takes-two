@@ -562,8 +562,8 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     private fun ensurePackEnvironment(pack: File, titleId: String?) {
         ensureFullGameEntitlement(pack, titleId)
         val rows = linkedMapOf<String, String>()
-        if (titleId == "010092A0172E4000") {   // It Takes Two: only the recorder on the 8 Elite prime cores; main stays with the scheduler
-            rows["DM_PIN_RECORD"] = "prime"
+        if (titleId == "010092A0172E4000") {   // It Takes Two: no CPU pinning in this A/B; keep the GPU load/clock log
+            rows["DM_PIN_RECORD"] = "0"
             rows["DM_PIN_MAIN"] = "0"
             rows["DM_GPU_LOG"] = "1"   // the report cannot read this phone's GPU load/clock; the host log can try the sysfs nodes
         }

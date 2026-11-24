@@ -287,6 +287,20 @@ static void gpu_log_sample(void) {
     else if (clk > 0) LOG("[perf] gpu clock %ld MHz (load unreadable)", clk / 1000);
     else if (busy >= 0) LOG("[perf] gpu busy %ld%% (clock unreadable)", busy);
 }
+// One line per CPU at the first present: the maximum the hardware offers, the maximum the current policy allows and the actual clock now. The pin
+// choice reads cpuinfo_max_freq; this shows whether a core is capped by the OEM or merely idling, and whether CPU 6/7 really are the highest.
+static void cpu_dump(void) {
+    static int done; if (done) return; done = 1;
+    long n = sysconf(_SC_NPROCESSORS_CONF); if (n > 32) n = 32;
+    for (long c = 0; c < n; c++) {
+        char p[128]; long hw = 0, smax = 0, cur = 0, cap = 0;
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/cpuinfo_max_freq", c); gpu_read_long(p, &hw);
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/scaling_max_freq", c); gpu_read_long(p, &smax);
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/scaling_cur_freq", c); gpu_read_long(p, &cur);
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpu_capacity", c); gpu_read_long(p, &cap);
+        LOG("[perf] cpu%ld max %ld scale_max %ld cur %ld MHz capacity %ld", c, hw / 1000, smax / 1000, cur / 1000, cap);
+    }
+}
 
 static int64_t g_work_start;
 // ---- adaptive frame rate: when the frames do not fit the period the game asks for, presentation steps to a longer one the display divides evenly
@@ -458,6 +472,7 @@ void dm_perf_frame(double period) {
     // and the work then never shows the room to step back up (NEO stayed at 30 fps with frames of 31 to 48 ms)
     if (g_game_period && (int64_t)g_game_period < p) p = (int64_t)g_game_period;
     hint_init(p);
+    cpu_dump();
     { static unsigned n; if (++n % 60 == 0) gpu_turbo(); }
     { static unsigned n; if (++n % 30 == 0) gpu_log_sample(); }
     if (g_work_start) {   // (a longer span: the game was held, by the pause menu or the background)
