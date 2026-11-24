@@ -14,8 +14,11 @@ copied from a working tree, and the upstream history is not in this repository.
 
 - Game: **It Takes Two** (Switch), title ID `010092A0172E4000`, build `v131072 / 1.0.2`.
 - Host: nx2androidX, package `com.gjr.nx2androidx`, `arm64-v8a`, `targetSdk 28`.
-- Latest build: **alpha13**, `versionCode 32`, `versionName 0.4.1-alpha13`.
-- Signing: alpha13 and the successful CI build in this fork use the same debug keystore
+- Baseline build: **alpha13**, `versionCode 32`, `versionName 0.4.1-alpha13`, SHA-256
+  `3886fc7e...5622`.
+- Latest CI build: **CI r2 clean-port**, same `versionCode 32` / `0.4.1-alpha13`, SHA-256
+  `e64654d2...0303`; it adds the shader-table fix for a clean It Takes Two port.
+- Signing: alpha13 and CI r2 use the same debug keystore
   (certificate SHA-256 `2224ed75eecc74c5e9ca4adedf94ab2ddb9e3c28b09e049fd09c88244111c3e0`),
   so the CI APK installs over alpha13. The keystore and its password/alias are repository
   secrets; no key is committed.
@@ -34,8 +37,9 @@ copied from a working tree, and the upstream history is not in this repository.
 
 1. `README.md` — what the release contains and how to install it.
 2. `AI_CONTEXT.md` — this file.
-3. `CHANGES.md` — the 13 modified files and the exact purpose of each change.
-4. `patches/it2-alpha13.patch` — the textual diff of those 13 files against the local base.
+3. `CHANGES.md` — the 13 alpha13 changes, the clean-port fix, and the exact purpose of each.
+4. `patches/it2-alpha13.patch` — the textual diff of those 13 alpha13 files against the local base
+   (the clean-port fix is a 14th change, described in `CHANGES.md`).
 5. `SOURCE_MAP.md` — what is intentionally absent and how to reconstitute it.
 6. `docs/IT2-完整版解锁说明.md` — the full-game entitlement notes.
 

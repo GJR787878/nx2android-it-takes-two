@@ -6,8 +6,10 @@
 [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch)。补丁相对本地工作树基准
 `ba205aa`；移植的上游侧提交见 `AI_CONTEXT.md` / `AI_CONTEXT.zh.md`。
 
-diff 共 **13 个已跟踪文件：301 行新增、58 行删除**。两个未跟踪资产目录也在仓库里，但
-无法出现在 `git diff` 中，单独列在下面。
+alpha13 补丁共 **13 个已跟踪文件：301 行新增、58 行删除**。两个未跟踪资产目录也在仓库里，但
+无法出现在 `git diff` 中，单独列在下面。本 fork 另有 **第 14 个已跟踪改动**：
+`nxnative/scripts/build_ipa_from_nsp.py` 的 clean-port 修复；它单独列在下面，刻意不放进
+`patches/it2-alpha13.patch`。
 
 ## 已跟踪文件改动
 

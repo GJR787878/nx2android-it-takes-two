@@ -6,9 +6,11 @@ This is a change inventory, not a Git history. The exact textual diff for the tr
 in [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch). The patch is taken against the local
 working-tree base `ba205aa`; the port's upstream-side commits are listed in `AI_CONTEXT.md`.
 
-The diff contains **13 modified tracked files: 301 insertions and 58 deletions**. Two untracked
-asset trees are included in the repository but cannot appear in a `git diff`; they are listed
-separately below.
+The alpha13 patch contains **13 modified tracked files: 301 insertions and 58 deletions**. Two
+untracked asset trees are included in the repository but cannot appear in a `git diff`; they are
+listed separately below. This fork adds a **14th tracked change**, the clean-port fix in
+`nxnative/scripts/build_ipa_from_nsp.py`; it is described below and is deliberately outside
+`patches/it2-alpha13.patch`.
 
 ## Modified tracked files
 

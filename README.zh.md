@@ -13,7 +13,7 @@ alpha13 构建、30 帧与 60 帧日志、改动源码快照和游戏档案包�
 这是发布快照，不是完整的上游 Git 历史。判断代码或测试状态前，先读：
 
 - [`AI_CONTEXT.md`](AI_CONTEXT.md) — 项目定位、基准 commit、已验证事实与已知问题。
-- [`CHANGES.md`](CHANGES.md) — 13 个改动文件与两个新增资产目录。
+- [`CHANGES.md`](CHANGES.md) — 13 个 alpha13 改动、clean-port 修复与两个新增资产目录。
 - [`SOURCE_MAP.md`](SOURCE_MAP.md) — 为什么少了 184 个上游 profile 和 `docs/images`。
 - [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch) — 精确的已跟踪文件 diff。
 
@@ -22,16 +22,13 @@ alpha13 构建、30 帧与 60 帧日志、改动源码快照和游戏档案包�
 
 ## 最新构建
 
-| 项目 | 值 |
-|---|---|
-| APK | `nx2android-v0.4.1-alpha13-it2-srgb.apk` |
-| versionCode / versionName | `32` / `0.4.1-alpha13` |
-| 大小 | 248 MB（完整包，内含移植工具链；不含 RomFS/游戏文件） |
-| SHA-256 | `3886fc7e95a04ce50a3c60ffd0b311c64dc6685174843a5c58a32afdc1cd5622` |
-| 安装 | 覆盖 alpha12（`versionCode 31`），同一 debug 签名 |
+| 构建 | APK | versionCode / versionName | 大小 | SHA-256 |
+|---|---|---|---|---|
+| alpha13 基线 | `nx2android-v0.4.1-alpha13-it2-srgb.apk` | `32` / `0.4.1-alpha13` | 259,504,271 B | `3886fc7e95a04ce50a3c60ffd0b311c64dc6685174843a5c58a32afdc1cd5622` |
+| CI r2 clean-port（最新） | `nx2android-v0.4.1-alpha13-it2-ci-r2.apk` | `32` / `0.4.1-alpha13` | 259,504,735 B | `e64654d297b9c008e6c741b833af9e329cfc67f88a5c0b0bcc196dc085100303` |
 
-APK 放在 **Releases**，不在 Git 树里，因为它超过 GitHub 单文件 100 MB 限制。
-`nx2a-profiles-r2-it2.zip`（90 MB）和日志压缩包也在 Release 里。
+两者都能覆盖 alpha12（`versionCode 31`），同一 debug 签名。APK 放在 **Releases**，不在 Git 树里，
+因为它超过 GitHub 单文件 100 MB 限制。`nx2a-profiles-r2-it2.zip`（90 MB）和日志压缩包也在 Release 里。
 
 ## 仓库内容
 

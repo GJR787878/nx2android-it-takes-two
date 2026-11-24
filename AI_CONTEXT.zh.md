@@ -14,8 +14,11 @@
 
 - 游戏：**It Takes Two**（Switch），Title ID `010092A0172E4000`，build `v131072 / 1.0.2`。
 - 宿主：nx2androidX，包名 `com.gjr.nx2androidx`，`arm64-v8a`，`targetSdk 28`。
-- 最新构建：**alpha13**，`versionCode 32`，`versionName 0.4.1-alpha13`。
-- 签名：alpha13 与本 fork 成功跑通的 CI 构建使用同一把 debug keystore（证书 SHA-256
+- 基线构建：**alpha13**，`versionCode 32`，`versionName 0.4.1-alpha13`，SHA-256
+  `3886fc7e...5622`。
+- 最新 CI 构建：**CI r2 clean-port**，同样 `versionCode 32` / `0.4.1-alpha13`，SHA-256
+  `e64654d2...0303`；它增加了 clean 移植《双人成行》的 shader 表修复。
+- 签名：alpha13 与 CI r2 使用同一把 debug keystore（证书 SHA-256
   `2224ed75eecc74c5e9ca4adedf94ab2ddb9e3c28b09e049fd09c88244111c3e0`），所以 CI APK
   可以覆盖安装 alpha13。keystore 与密码/别名存放在仓库 Secrets，不提交进 Git。
 - 移植改动的基准：`GJR787878/nx2androidX`，分支 `it2-diag`。
@@ -32,8 +35,9 @@
 
 1. `README.md` / `README.zh.md` — Release 内容与安装方式。
 2. `AI_CONTEXT.md` / `AI_CONTEXT.zh.md` — 本文件。
-3. `CHANGES.md` / `CHANGES.zh.md` — 13 个改动文件及每个改动的原因。
-4. `patches/it2-alpha13.patch` — 这 13 个文件相对本地基准的文本 diff。
+3. `CHANGES.md` / `CHANGES.zh.md` — 13 个 alpha13 改动、clean-port 修复及每个改动的原因。
+4. `patches/it2-alpha13.patch` — 这 13 个 alpha13 文件相对本地基准的文本 diff
+   （clean-port 修复是第 14 个改动，见 `CHANGES.md`）。
 5. `SOURCE_MAP.md` / `SOURCE_MAP.zh.md` — 哪些内容故意没有放入，以及如何恢复。
 6. `docs/IT2-完整版解锁说明.md` — 完整版授权说明。
 

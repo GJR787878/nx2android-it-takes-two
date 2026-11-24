@@ -15,24 +15,22 @@ This is a release snapshot, not the full upstream Git history. Read these before
 tree or the test status:
 
 - [`AI_CONTEXT.md`](AI_CONTEXT.md) — purpose, base commits, verified facts and known issues.
-- [`CHANGES.md`](CHANGES.md) — the 13 modified files and the two added asset trees.
+- [`CHANGES.md`](CHANGES.md) — the 13 alpha13 changes, the clean-port fix, and the two added asset trees.
 - [`SOURCE_MAP.md`](SOURCE_MAP.md) — why the 184 upstream profiles and `docs/images` are absent.
 - [`patches/it2-alpha13.patch`](patches/it2-alpha13.patch) — the exact tracked-file diff.
 
 Chinese versions: [`AI_CONTEXT.zh.md`](AI_CONTEXT.zh.md), [`CHANGES.zh.md`](CHANGES.zh.md),
 [`SOURCE_MAP.zh.md`](SOURCE_MAP.zh.md).
 
-## Latest build
+## Latest builds
 
-| Item | Value |
-|---|---|
-| APK | `nx2android-v0.4.1-alpha13-it2-srgb.apk` |
-| versionCode / versionName | `32` / `0.4.1-alpha13` |
-| Size | 248 MB (full package, includes the porter toolchain; no RomFS/game files) |
-| SHA-256 | `3886fc7e95a04ce50a3c60ffd0b311c64dc6685174843a5c58a32afdc1cd5622` |
-| Install | Over alpha12 (`versionCode 31`), same debug signer |
+| Build | APK | versionCode / versionName | Size | SHA-256 |
+|---|---|---|---|---|
+| alpha13 baseline | `nx2android-v0.4.1-alpha13-it2-srgb.apk` | `32` / `0.4.1-alpha13` | 259,504,271 B | `3886fc7e95a04ce50a3c60ffd0b311c64dc6685174843a5c58a32afdc1cd5622` |
+| CI r2 clean-port (latest) | `nx2android-v0.4.1-alpha13-it2-ci-r2.apk` | `32` / `0.4.1-alpha13` | 259,504,735 B | `e64654d297b9c008e6c741b833af9e329cfc67f88a5c0b0bcc196dc085100303` |
 
-The APK is in **Releases**, not in the Git tree, because it is over GitHub's 100 MB file limit.
+Both install over alpha12 (`versionCode 31`) and use the same debug signer. The APK is in
+**Releases**, not in the Git tree, because it is over GitHub's 100 MB file limit.
 `nx2a-profiles-r2-it2.zip` (90 MB) and the log archives are there too.
 
 ## What is in this repository
