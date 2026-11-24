@@ -15,8 +15,10 @@ copied from a working tree, and the upstream history is not in this repository.
 - Game: **It Takes Two** (Switch), title ID `010092A0172E4000`, build `v131072 / 1.0.2`.
 - Host: nx2androidX, package `com.gjr.nx2androidx`, `arm64-v8a`, `targetSdk 28`.
 - Latest build: **alpha13**, `versionCode 32`, `versionName 0.4.1-alpha13`.
-- Signing: alpha13 used the debug keystore. A CI build needs a stable key to install over it;
-  the runner's throwaway debug key is not the same key.
+- Signing: alpha13 and the successful CI build in this fork use the same debug keystore
+  (certificate SHA-256 `2224ed75eecc74c5e9ca4adedf94ab2ddb9e3c28b09e049fd09c88244111c3e0`),
+  so the CI APK installs over alpha13. The keystore and its password/alias are repository
+  secrets; no key is committed.
 - Base of the port changes: `GJR787878/nx2androidX`, branch `it2-diag`.
   - sRGB/present commit: `e850f3ad95af44c8e63d681ebb8805efebee8597`
   - revision 9 commit: `6bd4a9f4641f5cf726836481e300c1523f444cbb`
@@ -75,17 +77,32 @@ Relevant code: `nxnative/dm/android/gfx_vk_present.c` (`present_one`, `present_w
 - The application pool is still 3.21 GB; it was not raised. Later chapters can exhaust it.
 - Alias stale reads remain; they are a visual-correctness risk, not a confirmed crash cause.
 - No tombstone or `logcat -b crash` is in the provided logs.
-- There is no successful CI run in this repository yet. The workflow exists, but it has not
-  been made green.
+- The test suite is still not green. The CI build workflow deliberately does not run it; a
+  green APK artifact is not a green test suite.
 
 ## CI status and test caveat
 
-`.github/workflows/android-apk.yml` is active. It is a release-style build: it downloads the
-rootfs/toolchain, runs the tests, builds with Gradle and uploads the APK as an artifact; on a
-`v*` tag it also attaches the APK and profiles package to the Release.
+This fork's `.github/workflows/android-apk.yml` is a working build, not a placeholder. A
+`workflow_dispatch` run builds the payload and the APK and uploads `nx2android-android-apk`;
+a `v*` tag attaches the APK and profiles package to the matching Release. Run
+`45283177475` succeeded in 5m17s and produced a 259,504,747-byte APK with SHA-256
+`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`.
 
-At snapshot time, `python -m unittest discover tests` is **not green** on this tree. Known
-source-level blockers include:
+### Clean-port fix
+
+The first CI APK built fine, but a fresh It Takes Two port stopped with `FileNotFoundError` on
+`dm/games/010092A0172E4000/shader_map.tsv`: `split_shaders()` read the profile's shader tables
+even though the repository profile has only `game.tsv` and `android.tsv`. Commit `70f4e38`
+makes a table-less profile copy the split's `shader_map.tsv`, `shader_facts.tsv` and
+`shader_pairs.tsv` as its first port's, and disables package reuse until those tables exist.
+The shader split succeeds (32,118 shaders: 2,171 compute, 81 geometry, 24,779 pixel, 5,087
+vertex). The fix is in the r2 APK (`ci-20261124-alpha13-r2`). A device run then completed all
+nine stages with exit code 0 at `2026-11-24 07:53:06` (OPPO OPD2409, Android 17, 60 fps); its
+text log is under `logs/it2-alpha13-r2-20261124-080056/`. The tables are written into the
+per-port `dm/games` copy and removed by `drop_profile`, so every clean port still splits again.
+
+The workflow does **not** run the tests: `python -m unittest discover tests` is still not green
+on this tree. Known source-level blockers include:
 
 - `android/app/src/main/java/com/nx/android/game/GameActivity.kt` has a hard-coded Chinese
   fragment `"60 帧"` in an English log line; `tests/test_app_text.py` rejects it.
@@ -94,14 +111,15 @@ source-level blockers include:
 - `tests/test_docs_tables.py` and the README image test need the omitted profiles and
   `docs/images`.
 
-Do not treat a red test run as proof that the native port cannot build. It is a snapshot of a
-working build with the packaging/test inputs deliberately slimmed. See `SOURCE_MAP.md` for the
-missing inputs.
+Do not treat a red test run as proof that the APK cannot build: it is a snapshot of a working
+build with packaging/test inputs deliberately slimmed. The build workflow was validated
+separately. See `SOURCE_MAP.md` for the missing inputs.
 
 ## Do not assume
 
-- Do not assume `nxnative/dm/games` contains all 185 profiles; it contains only the IT2 two-file
-  profile plus the upstream profile README. The release package has the full set.
+- Do not assume `nxnative/dm/games` contains all 185 profiles; it contains the four upstream
+  scripts (`game.py`, `profile_guess.py`, `settings.py`, `settings.tsv`), the README, and the
+  IT2 two-file profile. The release package has the full set.
 - Do not assume `docs/images` exists; it was omitted to keep the snapshot small.
 - Do not treat alpha13 as “sRGB fixed”. The honest status is “runs, sRGB fallback not active”.
 - Do not commit a keystore, `prod.keys`, game dumps, RomFS or data packs to make CI work.

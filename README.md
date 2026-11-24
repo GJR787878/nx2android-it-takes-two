@@ -66,6 +66,12 @@ All large files are attached to the [alpha13 release](https://github.com/GJR7878
 - [60 fps alpha12 log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha12-log.zip)
 - [60 fps alpha13 log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha13-srgb-log.zip)
 
+The GitHub Actions build of this fork is attached to the [CI r2 release](https://github.com/GJR787878/nx2android-it-takes-two2/releases/tag/ci-20261124-alpha13-r2):
+
+- [CI-built APK](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/nx2android-v0.4.1-alpha13-it2-ci-r2.apk), signed with the same key as alpha13
+- [CI profiles package](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/nx2a-profiles-ci-r2.zip), It Takes Two only
+- [comparison report](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/CI_BUILD_REPORT.md)
+
 ## Logs and measured behaviour
 
 | Log | Build | Run | Key numbers |
@@ -114,6 +120,34 @@ bash packaging/android-apk/build_apk.sh release
 The build needs an Android NDK r27c, the ARM64 LLVM toolchain and the Python wheels used by
 `packaging/android-apk/build_toolchain.py`. The alpha13 APK was produced with
 `versionCode 32` and the debug signing key.
+
+## CI build
+
+This fork builds the APK on GitHub Actions. Open **Actions → Android app → Run workflow**; a
+`workflow_dispatch` run uploads `nx2android-android-apk` (the APK) and `nx2a-game-profiles`.
+Run [`45283177475`](https://github.com/GJR787878/nx2android-it-takes-two2/actions/runs/45283177475)
+succeeded in 5m17s and produced a 259,504,747-byte APK, SHA-256
+`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`.
+
+It is signed with the same debug certificate as alpha13, so it installs over alpha13. The
+keystore is kept in repository secrets (`NX2A_KEYSTORE_B64` plus password/alias/key secrets),
+not in Git. The workflow builds the APK only; it does not run the unit tests, which are not
+green on this snapshot.
+
+### Clean-port fix
+
+The first CI APK built fine but a fresh It Takes Two port stopped in `split_shaders()` with
+`FileNotFoundError` on `dm/games/010092A0172E4000/shader_map.tsv`. The repository profile has
+only `game.tsv` and `android.tsv`; an old port worked because its working directory already
+held tables from an earlier split. Commit `70f4e38` makes a table-less profile take the split's
+three tables as its first port's instead of reading missing files. The shader split itself
+succeeds (32,118 shaders: 2,171 compute, 81 geometry, 24,779 pixel, 5,087 vertex). The fix is in
+the r2 APK above.
+
+The first successful device build with this fix is in
+[`logs/it2-alpha13-r2-20261124-080056/`](logs/it2-alpha13-r2-20261124-080056/README.md): port
+exit code 0 at `2026-11-24 07:53:06`, all nine stages, output
+`ItTakesTwo-data`. The full 15-file ZIP is attached to the `ci-20261124-alpha13-r2` release.
 
 ## Credits and rights
 

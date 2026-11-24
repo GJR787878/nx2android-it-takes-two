@@ -15,8 +15,9 @@
 - 游戏：**It Takes Two**（Switch），Title ID `010092A0172E4000`，build `v131072 / 1.0.2`。
 - 宿主：nx2androidX，包名 `com.gjr.nx2androidx`，`arm64-v8a`，`targetSdk 28`。
 - 最新构建：**alpha13**，`versionCode 32`，`versionName 0.4.1-alpha13`。
-- 签名：alpha13 使用 debug keystore。要让 CI 构建能覆盖安装，需要稳定密钥；GitHub
-  runner 的临时 debug key 不是同一把。
+- 签名：alpha13 与本 fork 成功跑通的 CI 构建使用同一把 debug keystore（证书 SHA-256
+  `2224ed75eecc74c5e9ca4adedf94ab2ddb9e3c28b09e049fd09c88244111c3e0`），所以 CI APK
+  可以覆盖安装 alpha13。keystore 与密码/别名存放在仓库 Secrets，不提交进 Git。
 - 移植改动的基准：`GJR787878/nx2androidX`，分支 `it2-diag`。
   - sRGB/present 提交：`e850f3ad95af44c8e63d681ebb8805efebee8597`
   - revision 9 提交：`6bd4a9f4641f5cf726836481e300c1523f444cbb`
@@ -74,15 +75,31 @@ alpha13 日志是 `logs/IT2-60fps-alpha13-srgb-log.zip` 里的 417 秒运行：
 - 应用池仍是 3.21 GB，没有扩容；后续章节可能耗尽。
 - alias stale read 仍存在；主要是画面正确性风险，不是已确认的崩溃原因。
 - 提供的日志里没有 tombstone 或 `logcat -b crash`。
-- 本仓库还没有成功的 CI 运行。工作流存在，但尚未修到全绿。
+- 测试套件仍不是全绿。CI 构建工作流有意不跑测试；APK 产物绿不等于测试绿。
 
 ## CI 状态与测试注意事项
 
-`.github/workflows/android-apk.yml` 已处于 active。它是 release 风格构建：下载
-rootfs/工具链、跑测试、用 Gradle 构建并把 APK 作为 artifact 上传；在 `v*` tag 上还会把
-APK 和档案包挂到 Release。
+本 fork 的 `.github/workflows/android-apk.yml` 是能出包的工作流，不是占位文件：
+`workflow_dispatch` 会构建 payload 和 APK，上传 `nx2android-android-apk`；`v*` tag 会把
+APK 和 profiles 包挂到对应 Release。运行 `45283177475` 在 5 分 17 秒内成功，产物
+259,504,747 字节，SHA-256 为
+`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`。
 
-快照生成时，`python -m unittest discover tests` 在本树上 **不是全绿**。已知源码级阻塞项：
+### clean-port 修复
+
+第一版 CI APK 能正常构建，但全新移植《双人成行》时在 `split_shaders()` 读取
+`dm/games/010092A0172E4000/shader_map.tsv` 处报 `FileNotFoundError`：仓库档案只有
+`game.tsv` 和 `android.tsv`，代码却仍去读档案的 shader 表。提交 `70f4e38` 让缺表档案把本次
+split 生成的 `shader_map.tsv`、`shader_facts.tsv`、`shader_pairs.tsv` 当作首次移植的表，
+并在表补齐前禁用包复用。shader split 本身成功：32,118 个 shader（compute 2,171、
+geometry 81、pixel 24,779、vertex 5,087）。修复已进入 r2 APK
+（`ci-20261124-alpha13-r2`）。真机随后完整跑完九个阶段，退出码 0，结束时间
+`2026-11-24 07:53:06`（OPPO OPD2409、Android 17、60 fps），文本日志在
+`logs/it2-alpha13-r2-20261124-080056/`。表只写进本次端口的 `dm/games`
+副本，`drop_profile` 会删除，所以每次 clean port 仍会重新 split。
+
+工作流 **不跑测试**：`python -m unittest discover tests` 在本树上仍不是全绿。已知源码级
+阻塞项：
 
 - `android/app/src/main/java/com/nx/android/game/GameActivity.kt` 的英文日志行里硬编码了
   中文 `"60 帧"`；`tests/test_app_text.py` 会拒绝。
@@ -90,13 +107,14 @@ APK 和档案包挂到 Release。
   真实头文件里有。
 - `tests/test_docs_tables.py` 和 README 图片测试需要被省略的 profiles 与 `docs/images`。
 
-不要把测试红当成“原生移植无法构建”的证据。它是一个可运行构建的快照，只是打包/测试输入
-被有意瘦身了。缺失输入见 `SOURCE_MAP.md`。
+不要把测试红当成 APK 不能构建的证据：它是瘦身过快照的工作构建，打包/测试输入被有意
+裁掉。构建工作流已单独验证。缺失输入见 `SOURCE_MAP.md`。
 
 ## 不要假设
 
-- 不要假设 `nxnative/dm/games` 包含全部 185 个档案；它只有 IT2 的两文件档案和上游
-  profile README。完整集合在 Release 包里。
+- 不要假设 `nxnative/dm/games` 包含全部 185 个档案；它有四个上游脚本
+  （`game.py`、`profile_guess.py`、`settings.py`、`settings.tsv`）、README 和 IT2 的
+  两文件档案。完整集合在 Release 包里。
 - 不要假设 `docs/images` 存在；它为了控制快照体积被省略了。
 - 不要把 alpha13 当作“sRGB 已修复”。真实状态是“能运行，sRGB fallback 未生效”。
 - 不要为了让 CI 跑通而提交 keystore、`prod.keys`、游戏转储、RomFS 或数据包。

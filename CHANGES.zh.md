@@ -41,6 +41,17 @@ diff 共 **13 个已跟踪文件：301 行新增、58 行删除**。两个未跟
 有意只包含这两个文件；另外 184 个档案的着色器表不在本快照中（见 `SOURCE_MAP.md` /
 `SOURCE_MAP.zh.md`）。
 
+## alpha13 快照之后的改动（本 fork）
+
+- `.github/workflows/android-apk.yml` 是能出包的工作流，不是占位文件：`workflow_dispatch`
+  构建 APK 和 profiles artifact；`v*` tag 把它们挂到 Release。工作流不跑单元测试。
+- 四个上游档案脚本 `game.py`、`profile_guess.py`、`settings.py`、`settings.tsv` 已补回
+  `nxnative/dm/games/`；没有它们，APK 里的档案工具不完整。
+- `nxnative/scripts/build_ipa_from_nsp.py`（提交 `70f4e38`）修复 clean 移植《双人成行》：
+  只有 `game.tsv` 和 `android.tsv` 的档案，直接采用 shader split 生成的
+  `shader_map.tsv`、`shader_facts.tsv`、`shader_pairs.tsv`，不再读取不存在的档案表。
+  这是相对 alpha13 补丁的第 14 个改动文件，未放进 `patches/it2-alpha13.patch`。
+
 ## 本快照已知测试阻塞
 
 - `GameActivity.kt` 的英文日志行里有中文片段 `"60 帧"`，这是 `test_app_text` 的失败项；

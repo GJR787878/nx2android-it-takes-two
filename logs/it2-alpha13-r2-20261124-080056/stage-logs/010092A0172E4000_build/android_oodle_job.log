@@ -1,0 +1,75 @@
+[dm] 562631.039s [nvn] null device: 537 names, 435 implemented (421 semantic + 14 empty, 304 of them on the large host stack), the other 102 go to the red-reporting stub
+[dm]     0.099s guest thread slots in TLS_SLOT_APP blocks: K18=1 KTLS=2 KTLR=3 KGATE=4
+[dm]     0.342s main: 76731 places a cheat must not write (the rewriter's own words and sites)
+[dm]     0.351s main: gates 261 patch_off 0xfffffffffebe0000 keys 1/2/3/4
+[dm]     0.351s main: base 0x7dd4118000 size 0xbce8000
+[dm]     0.361s subsdk0: 10590 places a cheat must not write (the rewriter's own words and sites)
+[dm]     0.362s subsdk0: gates 17 patch_off 0x6a0000 keys 1/2/3/4
+[dm]     0.362s subsdk0: base 0x7dd15e0000 size 0x718000
+[dm]     0.382s sdk: 14132 places a cheat must not write (the rewriter's own words and sites)
+[dm]     0.388s sdk: gates 124 patch_off 0xdb0000 keys 1/2/3/4
+[dm]     0.388s sdk: base 0x7dcf790000 size 0xe50000
+[dm]     0.391s main: undefined weak __rel_dyn_end bound to 0
+[dm]     0.391s main: undefined weak __rel_dyn_start bound to 0
+[dm]     0.391s main: undefined weak __rel_plt_end bound to 0
+[dm]     0.391s main: undefined weak __rel_plt_start bound to 0
+[dm]     0.420s main: undefined weak _ZTHN2EA4Jobs8Internal14t_pThreadStateE bound to 0
+[dm]     0.426s main: undefined weak _ZTHN2EA4Jobs8Internal14t_pThreadStateE bound to 0
+[dm]     0.427s main: reloc relative=875846 relr=0 abs/glob=8336 jump=811
+[dm]     0.427s subsdk0: undefined weak __rel_dyn_end bound to 0
+[dm]     0.427s subsdk0: undefined weak __rel_dyn_start bound to 0
+[dm]     0.427s subsdk0: undefined weak __rel_plt_end bound to 0
+[dm]     0.427s subsdk0: undefined weak __rel_plt_start bound to 0
+[dm]     0.456s subsdk0: silk_CB_lags_stage2_10_ms bound to an earlier module's definition (main)
+[dm]     0.456s subsdk0: silk_Lag_range_stage3_10_ms bound to an earlier module's definition (main)
+[dm]     0.457s subsdk0: silk_LSFCosTab_FIX_Q12 bound to an earlier module's definition (main)
+[dm]     0.458s subsdk0: silk_LTP_gain_middle_avg_RD_Q14 bound to an earlier module's definition (main)
+[dm]     0.458s subsdk0: silk_stereo_only_code_mid_iCDF bound to an earlier module's definition (main)
+[dm]     0.458s subsdk0: silk_NLSF_CB_WB bound to an earlier module's definition (main)
+[dm]     0.459s subsdk0: silk_pulses_per_block_iCDF bound to an earlier module's definition (main)
+[dm]     0.460s subsdk0: tf_select_table bound to an earlier module's definition (main)
+[dm]     0.533s subsdk0: reloc relative=1669 relr=0 abs/glob=13750 jump=3764 (some bound to an earlier module's definition)
+[dm]     0.534s subsdk0: 251 bound to an earlier module's definition in all
+[dm]     0.534s sdk: undefined weak __rel_dyn_end bound to 0
+[dm]     0.534s sdk: undefined weak __rel_dyn_start bound to 0
+[dm]     0.534s sdk: undefined weak __rel_plt_end bound to 0
+[dm]     0.534s sdk: undefined weak __rel_plt_start bound to 0
+[dm]     0.534s sdk: undefined weak nnosGetDefaultUserExceptionStackForApplication bound to 0
+[dm]     0.535s sdk: silk_sign_iCDF bound to an earlier module's definition (main)
+[dm]     0.535s sdk: silk_NLSF_CB_WB bound to an earlier module's definition (main)
+[dm]     0.536s sdk: silk_Resampler_3_4_COEFS bound to an earlier module's definition (main)
+[dm]     0.536s sdk: silk_rate_levels_iCDF bound to an earlier module's definition (main)
+[dm]     0.537s sdk: silk_LTP_vq_gain_ptrs_Q7 bound to an earlier module's definition (main)
+[dm]     0.538s sdk: silk_stereo_pred_quant_Q13 bound to an earlier module's definition (main)
+[dm]     0.540s sdk: silk_LTP_gain_iCDF_ptrs bound to an earlier module's definition (main)
+[dm]     0.540s sdk: _ZTSN2nn2sf4hipc6client26Hipc2ClientProxyBaseObjectE bound to an earlier module's definition (subsdk0)
+[dm]     0.701s sdk: undefined weak nnosGetDefaultUserExceptionStackForApplication bound to 0
+[dm]     0.723s sdk: reloc relative=10777 relr=0 abs/glob=14506 jump=8859 (some bound to an earlier module's definition)
+[dm]     0.723s sdk: 1057 bound to an earlier module's definition in all
+[dm]     0.723s force: 441 entries hit, 486 not referenced by this game
+[dm]     0.724s sdk: NintendoSDK nnSdk-13_3_5-Relea (major 13)
+[dm]     0.724s stubs=0
+[dm] pacing: target 60 fps (game profile fps_target), ceiling 0, hold on (game profile fps_hold), presents at the game's interval (game profile present_interval), governor on, pin 0, step-up p90, window game rate off, GPU turbo off
+[dm]     0.724s >>> nnosInitialize
+[dm]     0.724s guest AS 0x6d70000000 +0x1030000000  heap 0x7d98000000 alias 0x6d80000000 stack 0x7d88000000
+[dm]     0.730s >>> nninitInitializeSdkModule
+[dm]     0.730s init takeover: nndiagStartup (no-op)
+[dm]     0.730s init takeover: oe::Initialize (no-op)
+[dm]     0.730s init takeover: aoc::Initialize (no-op)
+[dm]     0.730s init takeover: err::InitializeContextWriterApi (no-op)
+[dm]     0.730s init takeover: fs::InitializeForApplication (no-op)
+[dm]     0.730s init takeover: pctl::Initialize (no-op)
+[dm]     0.730s init takeover: diag::InitializeApplicationAbortObserver (no-op)
+[dm]     0.730s >>> nninitStartup
+[dm]     0.730s [mem] AllocateAddressRegion +0xf80000000: 1 address regions live, 62.00 GB reserved, region ends up to +63.00 GB of the alias region (64.12 GB), 0.00 GB mapped
+[dm]     0.730s [mem] heap 0.01 GB (heap region 0.12 GB)
+[dm]     0.730s main: DT_INIT +0x30 (init_array 2023 entries)
+[dm]     0.732s [mem] alias region mapped up to +1.00 GB (alias region 64.12 GB)
+[dm]     0.741s [mem] alias region mapped up to +38.02 GB (alias region 64.12 GB)
+[dm]     0.744s ngc: ProfanityFilter host vtable of 9 slots (3 matched to the class's methods)
+[dm]     0.760s time::LoadTimeZoneRule CST (host time zone used instead)
+[dm]     0.760s ToCalendarTime: first conversion 1795477248 → 2026-11-24 07:40 (time zone CST, offset 28800 s)
+[dm]     0.776s subsdk0: DT_INIT +0x30 (init_array 45 entries)
+[dm]     0.776s sdk: DT_INIT +0x30 (init_array 112 entries)
+[dm]     0.817s DM_OODLE_JOB: OodleLZ_Decompress at main+0x62ff370
+[dm]     0.889s DM_OODLE_JOB: 184 records decoded with the game's OodleLZ_Decompress (0 failed, 21.9 MB out) → /data/user/0/com.gjr.nx2androidx/files/work/010092A0172E4000_build/tmp/ue_inline/job.bin.out

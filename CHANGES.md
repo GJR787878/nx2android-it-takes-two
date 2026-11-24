@@ -42,6 +42,20 @@ separately below.
 profile deliberately contains only those two files; the other 184 profiles' shader tables are
 not in this snapshot (see `SOURCE_MAP.md`).
 
+## Changes after the alpha13 snapshot (this fork)
+
+- `.github/workflows/android-apk.yml` is a working build, not a placeholder: a
+  `workflow_dispatch` run builds the APK and profiles artifact; a `v*` tag attaches them to a
+  Release. It does not run the unit tests.
+- The four upstream profile scripts `game.py`, `profile_guess.py`, `settings.py` and
+  `settings.tsv` were restored under `nxnative/dm/games/`; without them the APK's profile
+  tooling is incomplete.
+- `nxnative/scripts/build_ipa_from_nsp.py` (commit `70f4e38`) fixes a clean It Takes Two port:
+  a profile with only `game.tsv` and `android.tsv` now takes the shader split's
+  `shader_map.tsv`, `shader_facts.tsv` and `shader_pairs.tsv` instead of reading missing
+  profile tables. This is a 14th changed tracked file relative to the alpha13 patch, kept
+  outside `patches/it2-alpha13.patch`.
+
 ## Known test blockers in this snapshot
 
 - `GameActivity.kt` contains a Chinese fragment `"60 帧"` in an English log line; this is the

@@ -1,0 +1,22 @@
+phone: OPPO OPD2409
+manufacturer: OPPO
+model: OPD2409
+brand: OPPO
+product: OPD2409
+device: OP615CL1
+board: sun
+hardware: qcom
+soc: SM8750P
+abis: arm64-v8a
+android: 17 (SDK 37)
+kernel: 6.6.118-android15-8-gc4127a25dcf3-ab15863337-4k
+locale: zh_CN
+ram: 15440 MB total, 6427 MB available
+screen: 3392x2358 @420dpi
+app: com.gjr.nx2androidx
+version: 0.4.1-alpha13 (versionCode 32)
+installed from: com.android.packageinstaller
+MemTotal: 15811248 kB
+MemAvailable: 6581608 kB
+SwapTotal: 10485756 kB
+SwapFree: 4268192 kB

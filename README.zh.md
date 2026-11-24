@@ -62,6 +62,12 @@ README，以控制快照体积。上游其他游戏的 profile 表没有重复�
 - [60 帧 alpha12 日志](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha12-log.zip)
 - [60 帧 alpha13 日志](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha13-srgb-log.zip)
 
+本 fork 的 GitHub Actions 构建产物在 [CI r2 Release](https://github.com/GJR787878/nx2android-it-takes-two2/releases/tag/ci-20261124-alpha13-r2)：
+
+- [CI 构建 APK](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/nx2android-v0.4.1-alpha13-it2-ci-r2.apk)，与 alpha13 同一签名密钥
+- [CI profiles 包](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/nx2a-profiles-ci-r2.zip)，仅《双人成行》
+- [对比报告](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/CI_BUILD_REPORT.md)
+
 ## 日志与实测表现
 
 | 日志 | 构建 | 运行 | 关键数据 |
@@ -109,6 +115,32 @@ bash packaging/android-apk/build_apk.sh release
 构建需要 Android NDK r27c、ARM64 LLVM 工具链，以及
 `packaging/android-apk/build_toolchain.py` 使用的 Python wheel。alpha13 APK 用
 `versionCode 32` 和 debug 签名密钥构建。
+
+## CI 构建
+
+本 fork 用 GitHub Actions 出 APK。打开 **Actions → Android app → Run workflow**；
+`workflow_dispatch` 运行会产 `nx2android-android-apk`（APK）和 `nx2a-game-profiles`。
+运行 [`45283177475`](https://github.com/GJR787878/nx2android-it-takes-two2/actions/runs/45283177475)
+在 5 分 17 秒内成功，产物 259,504,747 字节，SHA-256 为
+`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`。
+
+它和 alpha13 使用同一张 debug 证书，因此可以覆盖安装 alpha13。keystore 存放在仓库
+Secrets（`NX2A_KEYSTORE_B64` 及密码/别名/密钥密码），不提交进 Git。工作流只出 APK，
+不跑单元测试；测试在本快照上仍不是全绿。
+
+### clean-port 修复
+
+第一版 CI APK 能正常构建，但全新移植《双人成行》时在 `split_shaders()` 读取
+`dm/games/010092A0172E4000/shader_map.tsv` 处报 `FileNotFoundError`。仓库档案只有
+`game.tsv` 和 `android.tsv`；旧端口能跑，是因为旧端口工作目录里已有上一次 split 生成的表。
+提交 `70f4e38` 让缺表档案直接把本次 split 的三张表当作首次移植的表，不再读不存在的文件。
+shader split 本身成功：32,118 个 shader（compute 2,171、geometry 81、pixel 24,779、
+vertex 5,087）。修复已进入上面的 r2 APK。
+
+第一次带修复的真机构建日志在
+[`logs/it2-alpha13-r2-20261124-080056/`](logs/it2-alpha13-r2-20261124-080056/README.md)：
+端口退出码 0，结束时间 `2026-11-24 07:53:06`，九个阶段全部完成，产物
+`ItTakesTwo-data`。完整 15 文件 ZIP 挂在 `ci-20261124-alpha13-r2` Release。
 
 ## 致谢与权利
 

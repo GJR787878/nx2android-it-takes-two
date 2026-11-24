@@ -15,6 +15,7 @@
 | `porter/` | 移植流水线（Python）：解包、着色器拆分、数据包组装、revision |
 | `nxnative/dm/` | 原生宿主：Vulkan 后端、Android 服务、输入、overlay、纹理/present 代码 |
 | `nxnative/dm/games/010092A0172E4000/` | 本移植的 `game.tsv` + `android.tsv` 档案 |
+| `nxnative/dm/games/{game.py,profile_guess.py,settings.py,settings.tsv}` | App 会打包的上游档案脚本；第一版瘦身快照漏了，现已补回 |
 | `nxnative/dm/games/README.md` | 上游的档案格式文档 |
 | `packaging/android-apk/` | `build_apk.sh`、资产暂存、NDK/LLVM 下载、APK 组装 |
 | `docs/` | 移植/架构/开发文档；原始上游 README 保存在 `docs/README-upstream.md` 和 `docs/README-upstream.zh.md` |
@@ -26,11 +27,14 @@
 
 ### 1. 其他游戏档案（大表集合）
 
-这里的 `nxnative/dm/games` 只有：
+这里的 `nxnative/dm/games` 有：
 
 - `010092A0172E4000/game.tsv`
 - `010092A0172E4000/android.tsv`
+- 四个上游脚本（`game.py`、`profile_guess.py`、`settings.py`、`settings.tsv`）
 - 上游 `README.md`
+
+它没有其他 184 个档案文件夹。
 
 上游档案是约 **572 MB** 的着色器表。提交它们会让这个快照变成档案仓库的第二份拷贝，并让
 仓库不必要地变大。
@@ -103,14 +107,16 @@ GitHub 工作流是 `.github/workflows/android-apk.yml`：
 - 需要用 `NX2A_KEYSTORE_B64`（以及匹配的密码/别名 secrets）才能用项目密钥签名。没有时，
   Gradle 使用 runner 的临时 debug key。
 
-**本快照的 CI 不是全绿。** 已知源码级测试阻塞项在 `CHANGES.md` / `CHANGES.zh.md`；
-缺失输入（profiles、docs images）见上。这是文档快照，不保证一次干净的 `git clone` 就能
-通过 `python -m unittest discover tests`。
+API/dispatch 构建已成功：运行 `45283177475` 在 5 分 17 秒内产出 APK。该运行包含 `70f4e38`
+的 clean-port 修复：只有 `game.tsv` 和 `android.tsv` 的档案，直接采用 shader split 生成的
+三张表，不再读取不存在的档案表。**测试套件**在本快照上仍不是全绿；已知源码级阻塞项在
+`CHANGES.md` / `CHANGES.zh.md`，缺失的测试输入（profiles、docs images）见上。构建工作流不跑
+测试，所以 APK 绿不等于测试绿。
 
 ## 给 AI 工具的阅读规则
 
 - `android/` + `porter/` + `nxnative/` + `packaging/` 是代码；`docs/` 是文档。
-- `nxnative/dm/games/010092A0172E4000` 是本移植唯一相关的档案；其他档案文件夹有意不在
+- `nxnative/dm/games` 有四个档案脚本、README 和 IT2 档案文件夹；其他档案文件夹有意不在
   Git 中。
 - 档案包是 App 的输入，不是 APK 内嵌内容。
 - sRGB fallback 在代码里，但 alpha13 中没有生效；见 `AI_CONTEXT.md` / `AI_CONTEXT.zh.md`。
