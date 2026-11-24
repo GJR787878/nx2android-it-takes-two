@@ -562,9 +562,9 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     private fun ensurePackEnvironment(pack: File, titleId: String?) {
         ensureFullGameEntitlement(pack, titleId)
         val rows = linkedMapOf<String, String>()
-        if (titleId == "010092A0172E4000") {   // It Takes Two: main and record on separate performance cores (the prime pair parks at 1.02 GHz here)
-            rows["DM_PIN_RECORD"] = "cpu:5"
-            rows["DM_PIN_MAIN"] = "cpu:4"
+        if (titleId == "010092A0172E4000") {   // It Takes Two: no pinning; the cluster governor did not raise CPU4/5 and the pinned pair lost the other cores
+            rows["DM_PIN_RECORD"] = "0"
+            rows["DM_PIN_MAIN"] = "0"
             rows["DM_GPU_LOG"] = "1"   // the report cannot read this phone's GPU load/clock; the host log can try the sysfs nodes
         }
         val aoc = File(pack, "aoc")

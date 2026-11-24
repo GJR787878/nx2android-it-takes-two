@@ -9,9 +9,9 @@ package	org.nx2a.t010092a0172e4000
 orientation	landscape
 requires	bcn
 graphics	nvn
-# Diagnostic A/B for the fixed-speed camera turn: the two hot host threads on separate performance cores (CPU 4 and 5,
-# 3.07 GHz), not on the prime pair 6/7, which this phone holds at 1.02 GHz under this workload (alpha16's audit).
-# alpha18 also bumps PLAYER_API_REVISION to 10, so the app rebuilds the cached host instead of running alpha16's.
-env	DM_PIN_RECORD=cpu:5
-env	DM_PIN_MAIN=cpu:4
+# alpha19: no CPU pinning. CPU 4/5 stayed at 1.2-1.6 GHz (the cluster governor reads the whole cluster's load, not
+# one pinned thread), and the two hot threads lost the other cores: 24.3 avg against 30.6 unpinned. The GPU is the
+# limiter now (41 ms a frame at 1500-2000 draws), so leave the scheduler alone.
+env	DM_PIN_RECORD=0
+env	DM_PIN_MAIN=0
 env	DM_GPU_LOG=1
