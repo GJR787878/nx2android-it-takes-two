@@ -178,13 +178,28 @@ typedef struct { int state, tries, calls; } pin_state;   // state: 0 not asked y
 static void pin_thread(pin_state *st, const char *var, const char *label) {
     if (st->state == 1 || (st->state == 2 && ++st->calls % 120)) return;
     const char *e = getenv(var); if (!e || !*e || !strcmp(e, "0")) { st->state = 1; return; }
-    int prime = !strcmp(e, "prime"); long n = sysconf(_SC_NPROCESSORS_CONF); if (n > 32) n = 32;
-    long mhz[32] = {0}, hi = 0, lo = 0;
-    for (long c = 0; c < n; c++) { char p[96]; snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/cpuinfo_max_freq", c); FILE *f = fopen(p, "r");
-        if (f) { if (fscanf(f, "%ld", &mhz[c]) != 1) mhz[c] = 0; fclose(f); } mhz[c] /= 1000; if (mhz[c] > hi) hi = mhz[c]; if (mhz[c] && (!lo || mhz[c] < lo)) lo = mhz[c]; }
-    if (!hi || hi == lo) { LOG("[perf] %s: the cores' clocks are unknown or all alike, not pinned", label); st->state = 1; return; }
-    cpu_set_t set; CPU_ZERO(&set); char l[96]; size_t o = 0;
-    for (long c = 0; c < n; c++) if (prime ? mhz[c] == hi : mhz[c] > lo) { CPU_SET(c, &set); o += snprintf(l + o, sizeof l - o, " %ld", c); }
+    long n = sysconf(_SC_NPROCESSORS_CONF); if (n > 32) n = 32;
+    cpu_set_t set; CPU_ZERO(&set); char l[96]; size_t o = 0; char how[40] = "";
+    if (!strncmp(e, "cpu:", 4)) {   // an explicit list: "cpu:4" or "cpu:4,5" (the prime cores may idle at their lowest clock)
+        const char *q = e + 4; int any = 0;
+        while (*q) {
+            char *end = NULL; long c = strtol(q, &end, 10);
+            if (end == q || c < 0 || c >= n) { any = 0; break; }
+            CPU_SET(c, &set); o += snprintf(l + o, sizeof l - o, " %ld", c); any = 1;
+            if (*end == ',') { q = end + 1; if (!*q) break; } else if (!*end) break; else { any = 0; break; }
+        }
+        if (!any) { LOG("[perf] %s: %s names no usable CPU, not pinned", label, var); st->state = 1; return; }
+        snprintf(how, sizeof how, "cpu list");
+    } else {
+        int prime = !strcmp(e, "prime");
+        long mhz[32] = {0}, hi = 0, lo = 0;
+        for (long c = 0; c < n; c++) { char p[96]; snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/cpuinfo_max_freq", c); FILE *f = fopen(p, "r");
+            if (f) { if (fscanf(f, "%ld", &mhz[c]) != 1) mhz[c] = 0; fclose(f); } mhz[c] /= 1000; if (mhz[c] > hi) hi = mhz[c]; if (mhz[c] && (!lo || mhz[c] < lo)) lo = mhz[c]; }
+        if (!hi || hi == lo) { LOG("[perf] %s: the cores' clocks are unknown or all alike, not pinned", label); st->state = 1; return; }
+        for (long c = 0; c < n; c++) if (prime ? mhz[c] == hi : mhz[c] > lo) { CPU_SET(c, &set); o += snprintf(l + o, sizeof l - o, " %ld", c); }
+        snprintf(how, sizeof how, "%s", prime ? "prime" : "big");
+        if (prime) snprintf(how, sizeof how, "prime, up to %ld MHz", hi);
+    }
     if (sched_setaffinity(0, sizeof set, &set)) {
         int err = errno; st->tries++;
         if (st->state == 0) { char on[64] = "?"; FILE *f = fopen("/sys/devices/system/cpu/online", "r"); if (f) { if (fgets(on, sizeof on, f)) on[strcspn(on, "\n")] = 0; fclose(f); }
@@ -193,8 +208,8 @@ static void pin_thread(pin_state *st, const char *var, const char *label) {
         if (st->tries == 60) { LOG("[perf] %s: %s refused %d times (%s), left to the scheduler", label, var, st->tries, strerror(err)); st->state = 1; }
         return;
     }
-    if (st->tries) LOG("[perf] %s on CPUs%s (%s, up to %ld MHz), after %d refusals", label, l, prime ? "prime" : "big", hi, st->tries);
-    else LOG("[perf] %s on CPUs%s (%s, up to %ld MHz)", label, l, prime ? "prime" : "big", hi);
+    if (st->tries) LOG("[perf] %s on CPUs%s (%s), after %d refusals", label, l, how, st->tries);
+    else LOG("[perf] %s on CPUs%s (%s)", label, l, how);
     st->state = 1;
 }
 static pin_state g_pin_replay, g_pin_record, g_pin_main;
@@ -290,7 +305,8 @@ static void gpu_log_sample(void) {
 // One line per CPU at the first present: the maximum the hardware offers, the maximum the current policy allows and the actual clock now. The pin
 // choice reads cpuinfo_max_freq; this shows whether a core is capped by the OEM or merely idling, and whether CPU 6/7 really are the highest.
 static void cpu_dump(void) {
-    static int done; if (done) return; done = 1;
+    static unsigned calls; if (calls++ % 300) return;   // first present, then every ~5 s at 60 fps: the pin and the governor under load
+
     long n = sysconf(_SC_NPROCESSORS_CONF); if (n > 32) n = 32;
     for (long c = 0; c < n; c++) {
         char p[128]; long hw = 0, smax = 0, cur = 0, cap = 0;

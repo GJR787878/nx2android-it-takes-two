@@ -9,8 +9,8 @@ package	org.nx2a.t010092a0172e4000
 orientation	landscape
 requires	bcn
 graphics	nvn
-# Diagnostic A/B for the fixed-speed camera turn: no CPU pinning at all, so the scheduler places both hot threads as it did before the pin builds.
-# DM_GPU_LOG still writes the GPU load/clock every 30 presents (the report's gpu_load/gpu_frequency are empty on this phone).
-env	DM_PIN_RECORD=0
-env	DM_PIN_MAIN=0
+# Diagnostic A/B for the fixed-speed camera turn: the two hot host threads on separate performance cores (CPU 4 and 5,
+# 3.07 GHz), not on the prime pair 6/7, which this phone holds at 1.02 GHz under this workload (alpha16's audit).
+env	DM_PIN_RECORD=cpu:5
+env	DM_PIN_MAIN=cpu:4
 env	DM_GPU_LOG=1
