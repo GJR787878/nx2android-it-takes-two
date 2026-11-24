@@ -20,7 +20,7 @@ deliberately absent. Read this before saying that a path is “missing” or tha
 | `nxnative/dm/games/README.md` | Upstream's profile format documentation |
 | `packaging/android-apk/` | `build_apk.sh`, asset staging, NDK/LLVM fetching, APK assembly |
 | `docs/` | Porting/architecture/development docs; the original upstream README is kept as `docs/README-upstream.md` |
-| `logs/` | The three test log archives |
+| `logs/` | Text logs of the 2026-11-24 successful clean port (`it2-alpha13-r2-20261124-080056/`); the full ZIP is a release asset |
 | `.github/workflows/` | The CI definitions, including `android-apk.yml` and `tests.yml` |
 | `patches/` | The exact tracked-file diff for this snapshot |
 
@@ -112,8 +112,8 @@ The GitHub workflow is `.github/workflows/android-apk.yml`:
 - it needs `NX2A_KEYSTORE_B64` (and the matching password/alias secrets) to sign with the
   project key. Without it, Gradle uses the runner's throwaway debug key.
 
-The API/dispatch build succeeds: run `45283177475` produced the APK in 5m17s. Run
-`45283177475` includes the clean-port fix in `70f4e38`: a profile with only `game.tsv` and
+The API/dispatch build succeeds: run `45294935869` produced the APK in 7m25s. Run
+`45294935869` includes the clean-port fix in `70f4e38`: a profile with only `game.tsv` and
 `android.tsv` takes the shader split's three tables instead of reading missing profile tables.
 The **test suite** is still not green in this snapshot; the known source-level blockers are in
 `CHANGES.md`, and the missing test inputs (profiles, docs images) are above. The build workflow

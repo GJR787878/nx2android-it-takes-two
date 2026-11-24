@@ -19,7 +19,7 @@
 | `nxnative/dm/games/README.md` | 上游的档案格式文档 |
 | `packaging/android-apk/` | `build_apk.sh`、资产暂存、NDK/LLVM 下载、APK 组装 |
 | `docs/` | 移植/架构/开发文档；原始上游 README 保存在 `docs/README-upstream.md` 和 `docs/README-upstream.zh.md` |
-| `logs/` | 三份测试日志压缩包 |
+| `logs/` | 2026-11-24 成功 clean port 的文本日志（`it2-alpha13-r2-20261124-080056/`）；完整 ZIP 是 Release 资产 |
 | `.github/workflows/` | CI 定义，包括 `android-apk.yml` 和 `tests.yml` |
 | `patches/` | 本快照的精确已跟踪文件 diff |
 
@@ -107,7 +107,7 @@ GitHub 工作流是 `.github/workflows/android-apk.yml`：
 - 需要用 `NX2A_KEYSTORE_B64`（以及匹配的密码/别名 secrets）才能用项目密钥签名。没有时，
   Gradle 使用 runner 的临时 debug key。
 
-API/dispatch 构建已成功：运行 `45283177475` 在 5 分 17 秒内产出 APK。该运行包含 `70f4e38`
+API/dispatch 构建已成功：运行 `45294935869` 在 7 分 25 秒内产出 APK。该运行包含 `70f4e38`
 的 clean-port 修复：只有 `game.tsv` 和 `android.tsv` 的档案，直接采用 shader split 生成的
 三张表，不再读取不存在的档案表。**测试套件**在本快照上仍不是全绿；已知源码级阻塞项在
 `CHANGES.md` / `CHANGES.zh.md`，缺失的测试输入（profiles、docs images）见上。构建工作流不跑

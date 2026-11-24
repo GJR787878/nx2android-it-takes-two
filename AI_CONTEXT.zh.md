@@ -81,9 +81,9 @@ alpha13 日志是 `logs/IT2-60fps-alpha13-srgb-log.zip` 里的 417 秒运行：
 
 本 fork 的 `.github/workflows/android-apk.yml` 是能出包的工作流，不是占位文件：
 `workflow_dispatch` 会构建 payload 和 APK，上传 `nx2android-android-apk`；`v*` tag 会把
-APK 和 profiles 包挂到对应 Release。运行 `45283177475` 在 5 分 17 秒内成功，产物
-259,504,747 字节，SHA-256 为
-`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`。
+APK 和 profiles 包挂到对应 Release。运行 `45294935869` 在 7 分 25 秒内成功，产物
+259,504,735 字节，SHA-256 为
+`e64654d297b9c008e6c741b833af9e329cfc67f88a5c0b0bcc196dc085100303`。
 
 ### clean-port 修复
 

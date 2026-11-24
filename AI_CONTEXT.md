@@ -85,8 +85,8 @@ Relevant code: `nxnative/dm/android/gfx_vk_present.c` (`present_one`, `present_w
 This fork's `.github/workflows/android-apk.yml` is a working build, not a placeholder. A
 `workflow_dispatch` run builds the payload and the APK and uploads `nx2android-android-apk`;
 a `v*` tag attaches the APK and profiles package to the matching Release. Run
-`45283177475` succeeded in 5m17s and produced a 259,504,747-byte APK with SHA-256
-`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`.
+`45294935869` succeeded in 7m25s and produced a 259,504,735-byte APK with SHA-256
+`e64654d297b9c008e6c741b833af9e329cfc67f88a5c0b0bcc196dc085100303`.
 
 ### Clean-port fix
 

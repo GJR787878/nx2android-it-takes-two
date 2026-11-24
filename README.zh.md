@@ -62,11 +62,11 @@ README，以控制快照体积。上游其他游戏的 profile 表没有重复�
 - [60 帧 alpha12 日志](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha12-log.zip)
 - [60 帧 alpha13 日志](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/v0.4.1-alpha13/IT2-60fps-alpha13-srgb-log.zip)
 
-本 fork 的 GitHub Actions 构建产物在 [CI r2 Release](https://github.com/GJR787878/nx2android-it-takes-two2/releases/tag/ci-20261124-alpha13-r2)：
+本 fork 的 GitHub Actions 构建产物在 [CI r2 Release](https://github.com/GJR787878/nx2android-it-takes-two/releases/tag/ci-20261124-alpha13-r2)：
 
-- [CI 构建 APK](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/nx2android-v0.4.1-alpha13-it2-ci-r2.apk)，与 alpha13 同一签名密钥
-- [CI profiles 包](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/nx2a-profiles-ci-r2.zip)，仅《双人成行》
-- [对比报告](https://github.com/GJR787878/nx2android-it-takes-two2/releases/download/ci-20261124-alpha13-r2/CI_BUILD_REPORT.md)
+- [CI 构建 APK](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/nx2android-v0.4.1-alpha13-it2-ci-r2.apk)，与 alpha13 同一签名密钥
+- [CI profiles 包](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/nx2a-profiles-ci-r2.zip)，仅《双人成行》
+- [对比报告](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/CI_BUILD_REPORT.md)
 
 ## 日志与实测表现
 
@@ -120,9 +120,9 @@ bash packaging/android-apk/build_apk.sh release
 
 本 fork 用 GitHub Actions 出 APK。打开 **Actions → Android app → Run workflow**；
 `workflow_dispatch` 运行会产 `nx2android-android-apk`（APK）和 `nx2a-game-profiles`。
-运行 [`45283177475`](https://github.com/GJR787878/nx2android-it-takes-two2/actions/runs/45283177475)
-在 5 分 17 秒内成功，产物 259,504,747 字节，SHA-256 为
-`9b8111b56281dfbcaa5408d59d9ebc28cf812490b81742d4d4cb3f68b319de95`。
+运行 [`45294935869`](https://github.com/GJR787878/nx2android-it-takes-two/actions/runs/45294935869)
+在 7 分 25 秒内成功，产物 259,504,735 字节，SHA-256 为
+`e64654d297b9c008e6c741b833af9e329cfc67f88a5c0b0bcc196dc085100303`。
 
 它和 alpha13 使用同一张 debug 证书，因此可以覆盖安装 alpha13。keystore 存放在仓库
 Secrets（`NX2A_KEYSTORE_B64` 及密码/别名/密钥密码），不提交进 Git。工作流只出 APK，
