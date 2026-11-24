@@ -67,6 +67,7 @@ README，以控制快照体积。上游其他游戏的 profile 表没有重复�
 - [CI 构建 APK](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/nx2android-v0.4.1-alpha13-it2-ci-r2.apk)，与 alpha13 同一签名密钥
 - [CI profiles 包](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/nx2a-profiles-ci-r2.zip)，仅《双人成行》
 - [对比报告](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/CI_BUILD_REPORT.md)
+- [完整 clean-port 构建日志](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/IT2-60fps-alpha13-r2-cleanport-log.zip)
 
 ## 日志与实测表现
 

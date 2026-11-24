@@ -71,6 +71,7 @@ The GitHub Actions build of this fork is attached to the [CI r2 release](https:/
 - [CI-built APK](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/nx2android-v0.4.1-alpha13-it2-ci-r2.apk), signed with the same key as alpha13
 - [CI profiles package](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/nx2a-profiles-ci-r2.zip), It Takes Two only
 - [comparison report](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/CI_BUILD_REPORT.md)
+- [full clean-port build log](https://github.com/GJR787878/nx2android-it-takes-two/releases/download/ci-20261124-alpha13-r2/IT2-60fps-alpha13-r2-cleanport-log.zip)
 
 ## Logs and measured behaviour
 
