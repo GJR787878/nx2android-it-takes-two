@@ -729,8 +729,9 @@ static void *input_thread(void *a) {
 
 // ---- the host ----
 int main(int argc, char **argv);   // dm/host/main.c
+__attribute__((weak)) void dm_perf_main_thread(void) {}   // Android (perf_android.c): the game main thread's CPU placement
 static void *host_thread(void *a) {
-    (void)a; crash_thread_init();
+    (void)a; crash_thread_init(); dm_perf_main_thread();
     char mods[600]; snprintf(mods, sizeof mods, "%s/mods", g_root);
     char *argv[] = {"dmhost", mods, NULL};
     atomic_store(&g_running, 1);

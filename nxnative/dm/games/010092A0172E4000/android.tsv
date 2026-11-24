@@ -9,3 +9,7 @@ package	org.nx2a.t010092a0172e4000
 orientation	landscape
 requires	bcn
 graphics	nvn
+# The two hot host threads on the Snapdragon 8 Elite prime cores (CPU 6/7), the other cores left to the
+# workers. This is a profile default; the app also writes the same rows for an already-installed pack.
+env	DM_PIN_RECORD=prime
+env	DM_PIN_MAIN=prime

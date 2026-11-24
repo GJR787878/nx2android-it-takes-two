@@ -562,6 +562,10 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     private fun ensurePackEnvironment(pack: File, titleId: String?) {
         ensureFullGameEntitlement(pack, titleId)
         val rows = linkedMapOf<String, String>()
+        if (titleId == "010092A0172E4000") {   // It Takes Two: the producer and recorder threads on the 8 Elite prime cores
+            rows["DM_PIN_RECORD"] = "prime"
+            rows["DM_PIN_MAIN"] = "prime"
+        }
         val aoc = File(pack, "aoc")
         if (File(aoc, "1").isDirectory) rows["DM_AOC_DIR"] = aoc.absolutePath
         val fps60 = titleId != null && gameConfigs.forTitle(titleId).fps60

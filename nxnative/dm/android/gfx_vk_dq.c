@@ -163,13 +163,15 @@ static void run(const rec_hdr *h) {
     default: break;
     }
 }
+__attribute__((weak)) void dm_perf_record_thread(void) {}   // Android (perf_android.c): the recorder thread's CPU placement
 static void *recorder_main(void *arg) {
-    (void)arg; pthread_setname_np(pthread_self(), "vk record"); uint64_t r = 0;
+    (void)arg; pthread_setname_np(pthread_self(), "vk record"); dm_perf_record_thread(); uint64_t r = 0;
     for (;;) {
         uint64_t pub = atomic_load(&g_pub);
         if (r == pub) {
             for (int i = 0; i < 200 && (pub = atomic_load(&g_pub)) == r; i++) sched_yield();   // the producer usually queues the next call within microseconds
             if (pub == r) {
+                dm_perf_record_thread();   // again while its cores were refused (perf_android.c)
                 pthread_mutex_lock(&g_mu);
                 if (atomic_load(&g_draining)) pthread_cond_broadcast(&g_dcv);
                 atomic_store(&g_sleeping, 1);

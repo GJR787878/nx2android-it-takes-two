@@ -164,36 +164,43 @@ static void hint_threads_scan(int32_t self) {
     LOG("[perf] ADPF session threads:%s", l);
 }
 
-// DM_PIN_REPLAY (start-up): the replay thread (DM_NVN_ASYNC, hle_nvn.c replay_main) kept to the fastest cores. prime: the cores of the highest maximum clock
-// (a Snapdragon 8+ Gen 1's Cortex-X2), big: every core above the lowest maximum clock. Left to the scheduler, Unicorn Overlord's battle map replay took
-// 13 to 20 ms a frame from run to run with the same ~3,500 draws.
-// The replay thread calls this at its start and again before each present. A Galaxy S25 Ultra (Snapdragon 8 Elite, prime cores 6 and 7) refused it at the
-// start of 3 of about 30 runs of Breath of the Wild, and those runs stayed slower; all eight cores were online and allowed to the app when read during a run,
-// so the refusal seems to come while the app is still being moved into its foreground core group (a guess, not seen directly). So a refusal is tried again,
-// every 120 presents for up to 60 tries, and the log says which try held
-void dm_perf_replay_thread(void) {
-    static int state, tries, calls;   // state: 0 not asked yet, 1 settled (pinned, not wanted or given up), 2 refused so far
-    if (state == 1 || (state == 2 && ++calls % 120)) return;
-    const char *e = getenv("DM_PIN_REPLAY"); if (!e || !*e || !strcmp(e, "0")) { state = 1; return; }
+// DM_PIN_REPLAY / DM_PIN_RECORD / DM_PIN_MAIN (start-up): keep the hot host threads on the fastest cores.
+// "prime": the cores of the highest maximum clock (Snapdragon 8 Elite: CPU 6 and 7, the two Oryon prime
+// cores; CPU 0-5 are the six performance cores). "big": every core above the lowest maximum clock.
+// 0: off. Left to the scheduler, Unicorn Overlord's battle map replay took 13 to 20 ms a frame from run to
+// run with the same ~3,500 draws.
+// A Galaxy S25 Ultra (Snapdragon 8 Elite, prime cores 6 and 7) refused the replay thread's affinity at the
+// start of 3 of about 30 runs of Breath of the Wild, and those runs stayed slower; all eight cores were
+// online and allowed to the app when read during a run, so the refusal seems to come while the app is still
+// being moved into its foreground core group (a guess, not seen directly). A refusal is tried again every
+// 120 calls for up to 60 tries, and the log says which try held.
+typedef struct { int state, tries, calls; } pin_state;   // state: 0 not asked yet, 1 settled (pinned, not wanted or given up), 2 refused so far
+static void pin_thread(pin_state *st, const char *var, const char *label) {
+    if (st->state == 1 || (st->state == 2 && ++st->calls % 120)) return;
+    const char *e = getenv(var); if (!e || !*e || !strcmp(e, "0")) { st->state = 1; return; }
     int prime = !strcmp(e, "prime"); long n = sysconf(_SC_NPROCESSORS_CONF); if (n > 32) n = 32;
     long mhz[32] = {0}, hi = 0, lo = 0;
     for (long c = 0; c < n; c++) { char p[96]; snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/cpuinfo_max_freq", c); FILE *f = fopen(p, "r");
         if (f) { if (fscanf(f, "%ld", &mhz[c]) != 1) mhz[c] = 0; fclose(f); } mhz[c] /= 1000; if (mhz[c] > hi) hi = mhz[c]; if (mhz[c] && (!lo || mhz[c] < lo)) lo = mhz[c]; }
-    if (!hi || hi == lo) { LOG("[perf] DM_PIN_REPLAY: the cores' clocks are unknown or all alike, not pinned"); state = 1; return; }
+    if (!hi || hi == lo) { LOG("[perf] %s: the cores' clocks are unknown or all alike, not pinned", label); st->state = 1; return; }
     cpu_set_t set; CPU_ZERO(&set); char l[96]; size_t o = 0;
     for (long c = 0; c < n; c++) if (prime ? mhz[c] == hi : mhz[c] > lo) { CPU_SET(c, &set); o += snprintf(l + o, sizeof l - o, " %ld", c); }
     if (sched_setaffinity(0, sizeof set, &set)) {
-        int err = errno; tries++;
-        if (state == 0) { char on[64] = "?"; FILE *f = fopen("/sys/devices/system/cpu/online", "r"); if (f) { if (fgets(on, sizeof on, f)) on[strcspn(on, "\n")] = 0; fclose(f); }
-            LOG("[perf] DM_PIN_REPLAY: sched_setaffinity refused CPUs%s (%s; cores online %s): tried again every 120 presents", l, strerror(err), on); }
-        state = 2;
-        if (tries == 60) { LOG("[perf] DM_PIN_REPLAY: refused %d times (%s), the replay thread is left to the scheduler", tries, strerror(err)); state = 1; }
+        int err = errno; st->tries++;
+        if (st->state == 0) { char on[64] = "?"; FILE *f = fopen("/sys/devices/system/cpu/online", "r"); if (f) { if (fgets(on, sizeof on, f)) on[strcspn(on, "\n")] = 0; fclose(f); }
+            LOG("[perf] %s: %s refused CPUs%s (%s; cores online %s): tried again every 120 calls", label, var, l, strerror(err), on); }
+        st->state = 2;
+        if (st->tries == 60) { LOG("[perf] %s: %s refused %d times (%s), left to the scheduler", label, var, st->tries, strerror(err)); st->state = 1; }
         return;
     }
-    if (tries) LOG("[perf] replay thread on CPUs%s (%s, up to %ld MHz), after %d refusals", l, prime ? "prime" : "big", hi, tries);
-    else LOG("[perf] replay thread on CPUs%s (%s, up to %ld MHz)", l, prime ? "prime" : "big", hi);
-    state = 1;
+    if (st->tries) LOG("[perf] %s on CPUs%s (%s, up to %ld MHz), after %d refusals", label, l, prime ? "prime" : "big", hi, st->tries);
+    else LOG("[perf] %s on CPUs%s (%s, up to %ld MHz)", label, l, prime ? "prime" : "big", hi);
+    st->state = 1;
 }
+static pin_state g_pin_replay, g_pin_record, g_pin_main;
+void dm_perf_replay_thread(void) { pin_thread(&g_pin_replay, "DM_PIN_REPLAY", "replay thread"); }
+void dm_perf_record_thread(void) { pin_thread(&g_pin_record, "DM_PIN_RECORD", "vk record thread"); }
+void dm_perf_main_thread(void) { pin_thread(&g_pin_main, "DM_PIN_MAIN", "game main thread"); }
 
 static int64_t g_work_start;
 // ---- adaptive frame rate: when the frames do not fit the period the game asks for, presentation steps to a longer one the display divides evenly

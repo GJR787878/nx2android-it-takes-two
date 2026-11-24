@@ -175,6 +175,8 @@ DM_PAD_LABEL	bool		debug	start	front_android.c	a physical controller's face butt
 DM_PAD_LOG	bool	0	debug	?	pad_map.h	logs the physical controller's mapping as the host sees it (the app's controller test)
 DM_PAD_MERGE	bool		debug,ios	?	front_mac.m	
 DM_PAD_XBOX	bool		debug	start	front_android.c	a physical controller's face buttons go to the game by their label (an Xbox controller's A is the game's A) instead of by their position (the Switch's: the bottom button is B, the right one A). The game's prompts name the button (A to confirm, B to go back), which an Xbox controller's labels match a
+DM_PIN_MAIN	str	0	profile	?	perf_android.c	pin the game's main host thread to fast cores: 0 = no, "prime" = the fastest cores, other values = the big cores
+DM_PIN_RECORD	str	0	profile	?	perf_android.c	pin the "vk record" thread (DM_VK_MT_REPLAY) to fast cores: 0 = no, "prime" = the fastest cores, other values = the big cores
 DM_PIN_REPLAY	str	0	profile	?	perf_android.c	pin the replay thread to fast cores: 0 = no, "prime" = the fastest core, other values = the big cores
 DM_PREEMPT	int		debug	?	hle_thread.c	
 DM_PRELOAD	str		debug	?	main.c	Exercise the early-start path on Mac (on iOS it is called from the App's main())
