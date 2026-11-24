@@ -166,8 +166,9 @@ static void hint_threads_scan(int32_t self) {
 
 // DM_PIN_REPLAY / DM_PIN_RECORD / DM_PIN_MAIN (start-up): keep the hot host threads on the fastest cores.
 // "prime": the cores of the highest maximum clock (Snapdragon 8 Elite: CPU 6 and 7, the two Oryon prime
-// cores; CPU 0-5 are the six performance cores). "big": every core above the lowest maximum clock.
-// 0: off. Left to the scheduler, Unicorn Overlord's battle map replay took 13 to 20 ms a frame from run to
+// cores; CPU 0-5 are the six performance cores). "big": the cores of the second-highest clock
+// (Snapdragon 8 Elite: CPU 0-5, the six performance cores).
+// "cpu:N" / "cpu:N,M": an explicit list. 0: off. Left to the scheduler, Unicorn Overlord's battle map replay took 13 to 20 ms a frame from run to
 // run with the same ~3,500 draws.
 // A Galaxy S25 Ultra (Snapdragon 8 Elite, prime cores 6 and 7) refused the replay thread's affinity at the
 // start of 3 of about 30 runs of Breath of the Wild, and those runs stayed slower; all eight cores were
@@ -192,13 +193,14 @@ static void pin_thread(pin_state *st, const char *var, const char *label) {
         snprintf(how, sizeof how, "cpu list");
     } else {
         int prime = !strcmp(e, "prime");
-        long mhz[32] = {0}, hi = 0, lo = 0;
+        long mhz[32] = {0}, hi = 0, second = 0;
         for (long c = 0; c < n; c++) { char p[96]; snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%ld/cpufreq/cpuinfo_max_freq", c); FILE *f = fopen(p, "r");
-            if (f) { if (fscanf(f, "%ld", &mhz[c]) != 1) mhz[c] = 0; fclose(f); } mhz[c] /= 1000; if (mhz[c] > hi) hi = mhz[c]; if (mhz[c] && (!lo || mhz[c] < lo)) lo = mhz[c]; }
-        if (!hi || hi == lo) { LOG("[perf] %s: the cores' clocks are unknown or all alike, not pinned", label); st->state = 1; return; }
-        for (long c = 0; c < n; c++) if (prime ? mhz[c] == hi : mhz[c] > lo) { CPU_SET(c, &set); o += snprintf(l + o, sizeof l - o, " %ld", c); }
-        snprintf(how, sizeof how, "%s", prime ? "prime" : "big");
-        if (prime) snprintf(how, sizeof how, "prime, up to %ld MHz", hi);
+            if (f) { if (fscanf(f, "%ld", &mhz[c]) != 1) mhz[c] = 0; fclose(f); } mhz[c] /= 1000; if (mhz[c] > hi) hi = mhz[c]; }
+        if (!hi) { LOG("[perf] %s: the cores' clocks are unknown, not pinned", label); st->state = 1; return; }
+        if (!prime) for (long c = 0; c < n; c++) if (mhz[c] && mhz[c] < hi && mhz[c] > second) second = mhz[c];
+        if (!prime && !second) { LOG("[perf] %s: no second clock tier, not pinned", label); st->state = 1; return; }
+        for (long c = 0; c < n; c++) if (mhz[c] == (prime ? hi : second)) { CPU_SET(c, &set); o += snprintf(l + o, sizeof l - o, " %ld", c); }
+        snprintf(how, sizeof how, "%s, up to %ld MHz", prime ? "prime" : "big", prime ? hi : second);
     }
     if (sched_setaffinity(0, sizeof set, &set)) {
         int err = errno; st->tries++;

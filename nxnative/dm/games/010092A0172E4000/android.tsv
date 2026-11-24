@@ -11,6 +11,7 @@ requires	bcn
 graphics	nvn
 # Diagnostic A/B for the fixed-speed camera turn: the two hot host threads on separate performance cores (CPU 4 and 5,
 # 3.07 GHz), not on the prime pair 6/7, which this phone holds at 1.02 GHz under this workload (alpha16's audit).
+# alpha18 also bumps PLAYER_API_REVISION to 10, so the app rebuilds the cached host instead of running alpha16's.
 env	DM_PIN_RECORD=cpu:5
 env	DM_PIN_MAIN=cpu:4
 env	DM_GPU_LOG=1
