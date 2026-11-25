@@ -17,5 +17,6 @@ env	DM_PIN_MAIN=0
 env	DM_GPU_LOG=1
 # alpha21: the system Qualcomm driver renders this title's colour targets through UBWC format lists of its own;
 # disable the colour list (keep the depth one) to test whether the wrong materials are that path. Turnip ignores it.
-env	DM_VK_UBWC=0
+env	DM_VK_UBWC=2
+env	DM_VK_ANISO=0
 env	DM_VK_MIP_MAX=0
