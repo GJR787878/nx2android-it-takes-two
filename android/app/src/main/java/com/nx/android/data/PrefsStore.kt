@@ -67,6 +67,8 @@ class PrefsStore @Inject constructor(@ApplicationContext ctx: Context) {
         const val EXTERNAL_DISPLAY = "display.external"
         // the file provider: the app's own folders are handed to the file managers (on by default)
         const val FILE_PROVIDER = "file.provider"
+        // alpha20: the device's own Vulkan driver is the default; this marks the one-time move off the shipped Turnip
+        const val DRIVER_SYSTEM_DEFAULT = "driver.system.default"
     }
 
     val prefs: SharedPreferences = ctx.getSharedPreferences(NAME, Context.MODE_PRIVATE)

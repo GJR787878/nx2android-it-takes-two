@@ -80,7 +80,6 @@ import com.nx.android.data.RateSettings
 import com.nx.android.data.RuntimeCompiler
 import com.nx.android.data.RuntimeLibraries
 import com.nx.android.data.RuntimeStorage
-import com.nx.android.data.drivers.Drivers
 import com.nx.android.data.hasGyroscope
 import com.nx.android.data.library.LibraryFileScanner
 import com.nx.android.data.playback.PackEnvStore
@@ -631,8 +630,9 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
         // 手柄的档案（每只手柄一份）与手柄的枚举：中心靠它
         loadPadProfiles()
         GamepadScan.start(this)
-        // the default driver: a game whose driver was never picked runs on the app's built-in one (the row goes
-        // into the pack's env.txt, which the host reads). A driver the player picked is left alone.
+        // the default driver: the device's own Vulkan driver (an empty DM_VK_DRIVER row). A pack that never had
+        // a driver row, or still points at a driver in the app's own folder (the shipped Turnip of earlier
+        // builds), moves to it once; a driver the player picks afterwards is kept.
         applyDefaultDriver(File(pack))
         // the performance HUD's own preferences: the two lines, the fields, the temperature's unit
         val prefs = PrefsStore(this)
@@ -897,8 +897,16 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
      * one included) stays what it is.
      */
     private fun applyDefaultDriver(pack: File) {
-        val builtIn = Drivers.list(this).firstOrNull { it.shipped } ?: return
-        PackEnvStore.ensureDriverDefault(pack, builtIn.library.absolutePath)
+        val prefs = PrefsStore(this)
+        if (prefs.bool(PrefsStore.DRIVER_SYSTEM_DEFAULT)) return
+        val (lang, current) = PackEnvStore.current(pack)
+        val appDrivers = File(filesDir, "drivers").absolutePath + "/"
+        // null: never picked; a path under the app's drivers: the shipped Turnip (or another driver the app
+        // installed). Both become the device's own driver. A driver carried by the pack itself is left alone.
+        if (current.isNullOrEmpty() || current.startsWith(appDrivers)) {
+            PackEnvStore.set(pack, lang, "")
+        }
+        prefs.put(PrefsStore.DRIVER_SYSTEM_DEFAULT, true)
     }
 
     // ---- 性能 HUD 的开关与字段（App 的偏好，唯一真值）----
