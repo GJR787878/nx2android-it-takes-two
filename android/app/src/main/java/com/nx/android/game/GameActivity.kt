@@ -566,6 +566,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
             rows["DM_PIN_MAIN"] = "0"
             rows["DM_GPU_LOG"] = "1"   // the report cannot read this phone's GPU load/clock; the host log can try the sysfs nodes
             rows["DM_VK_UBWC"] = "2"   // alpha22: no colour format list with the device driver; test for the wrong materials
+            rows["DM_VK_MIP_MAX"] = "0" // alpha24: pin every sampler to mip 0; the left camera's flat patches are view-dependent, so this tells whether the mip choice or the texture is at fault
         }
         val aoc = File(pack, "aoc")
         if (File(aoc, "1").isDirectory) rows["DM_AOC_DIR"] = aoc.absolutePath
