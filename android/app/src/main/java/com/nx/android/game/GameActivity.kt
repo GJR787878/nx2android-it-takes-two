@@ -565,7 +565,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
             rows["DM_PIN_RECORD"] = "0"
             rows["DM_PIN_MAIN"] = "0"
             rows["DM_GPU_LOG"] = "1"   // the report cannot read this phone's GPU load/clock; the host log can try the sysfs nodes
-            rows["DM_VK_UBWC"] = "11"  // alpha23: colour list only on COMPRESSIBLE (render-target) images; sampled decals/lightmaps stay mutable
+            rows["DM_VK_UBWC"] = "2"   // alpha22: no colour format list with the device driver; test for the wrong materials
         }
         val aoc = File(pack, "aoc")
         if (File(aoc, "1").isDirectory) rows["DM_AOC_DIR"] = aoc.absolutePath

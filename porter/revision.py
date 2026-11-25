@@ -23,10 +23,8 @@ lighter picture is actually gone after the app update.
 10: the host's CPU pin accepts an explicit core list ("cpu:4"), and "big" now means the second-highest
 clock tier instead of every core above the lowest one (on the Snapdragon 8 Elite that meant the prime pair
 6/7 at 1.0 GHz): no new JNI surface, but every pack's runtime is rebuilt so the new pin is the one that runs.
-11: the host's DM_VK_UBWC bit 8 keeps a sampled-only colour image mutable while a COMPRESSIBLE (render-target)
-image keeps its format list: no new JNI surface, but the runtime is rebuilt so the new image path runs.
 """
-PLAYER_API_REVISION = 11
+PLAYER_API_REVISION = 10
 
 # The game profiles the player imports (a package of nxnative/dm/games/<title ID>/ folders) into their own folder: what the package was cut from.
 # PROFILES_REVISION counts the syncs of upstream's profiles (1: the first sync, seedds/nxnative at PROFILES_COMMIT); PROFILES_COMMIT is the upstream commit the

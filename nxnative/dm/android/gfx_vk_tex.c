@@ -226,8 +226,6 @@ VkFormat vk_int_fmt(uint32_t bytes, int sint) {
 // such a game wants DM_VK_UBWC=2 in its profile. 4 (off by default): with 1, colour images flagged as images also list the uint and the sint format of their texel
 // size, for storage views that read or write their raw bits (tex_desc_for). A cross-class list may make Adreno / Turnip drop UBWC on those images, which was not
 // measured, so only a profile that needs it turns it on (DM_VK_UBWC=7); without it such a view falls back to the image's own format (vk_tex_view_as)
-// 8 (opt-in): the colour list only for images the game marks COMPRESSIBLE - the ones the GPU may render into. A sampled-only texture
-// keeps MUTABLE_FORMAT, so a view in its own uncompressed format is not forced back to the image's format (It Takes Two's decals / lightmaps).
 static int ubwc_mode(void) { static int v = -1; if (v < 0) { const char *e = getenv("DM_VK_UBWC"); v = e ? atoi(e) : 3; } return v; }
 static vkimg_t *img_new(const tex_t *t, const vkfmt_t *f) {
     vkimg_t *im = calloc(1, sizeof *im);
@@ -254,8 +252,7 @@ static vkimg_t *img_new(const tex_t *t, const vkfmt_t *f) {
     if (im->samples > 1) ci.flags &= ~(VkImageCreateFlags)VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     VkFormat fl[4] = {f->vk, srgb_twin(f->vk), 0, 0}; uint32_t nfl = fl[1] ? 2 : 1;
     VkImageFormatListCreateInfo fli = {VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO, NULL, nfl, fl};
-    if (!f->compressed && (ubwc_mode() & (im->aspect == VK_IMAGE_ASPECT_COLOR_BIT ? 1 : 2)) &&
-        (!(ubwc_mode() & 8) || (im->aspect != VK_IMAGE_ASPECT_COLOR_BIT) || (d->flags & NVN_TEXTURE_FLAGS_COMPRESSIBLE))) {   // (bit 8: colour list only where the GPU may render; a depth format has no twin: a list of itself, no MUTABLE_FORMAT)
+    if (!f->compressed && (ubwc_mode() & (im->aspect == VK_IMAGE_ASPECT_COLOR_BIT ? 1 : 2))) {   // (a depth format has no twin: a list of itself, no MUTABLE_FORMAT)
         im->fixed_fmt = 1; im->fmt2 = fl[1]; ci.pNext = &fli;
         // a colour image flagged as an image may be stored into as integers (a shader declares r32ui over an RGBA8 texture, FINAL FANTASY TACTICS' UI composite:
         // tex_desc_for): with DM_VK_UBWC bit 4, its list takes the uint and the sint format of its texel size, which a storage view in them then may use
@@ -274,7 +271,7 @@ static vkimg_t *img_new(const tex_t *t, const vkfmt_t *f) {
     if (r) { VKRED_ONCE(10, "vkCreateImage failed (%d): %ux%ux%u format %#x (vk %d) target %d levels %u layers %u samples %u", r, im->w, im->h, im->d, d->format, f->vk, d->target, im->levels, im->layers, im->samples); free(im); return NULL; }
     VkMemoryRequirements req; vkGetImageMemoryRequirements(V.dev, im->img, &req);
     if ((ci.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) && im->w >= 256) { static int n; if (n++ < 16)   // UBWC check: a compressed target takes room for its metadata
-        VKLOG("target %ux%u format %d%s flags %#x: %llu bytes", im->w, im->h, f->vk, im->fixed_fmt ? " (format-listed)" : "", d->flags, (unsigned long long)req.size); }
+        VKLOG("target %ux%u format %d%s: %llu bytes", im->w, im->h, f->vk, im->fixed_fmt ? " (format-listed)" : "", (unsigned long long)req.size); }
     VkDeviceSize moff;
     if (!(im->mem = vk_image_memory(&req, vk_mem_type(req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT), &moff, &im->sub))) {
         VKRED_ONCE(11, "image memory allocation failed (%llu bytes)", (unsigned long long)req.size); vkDestroyImage(V.dev, im->img, NULL); free(im); return NULL; }
